@@ -1,7 +1,8 @@
+// app/_layout.jsx
 import { Tabs } from "expo-router";
-import { Users, Search, Calendar, Wallet, User } from "lucide-react-native";
-import { useTheme } from "../../utils/theme";
+import { BookOpen, Search, ShoppingBag, User, Users, Wallet } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../utils/theme";
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -51,10 +52,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="plans"
+        name="stores"
         options={{
-          title: "Plans",
-          tabBarIcon: ({ color }) => <Calendar color={color} size={24} />,
+          title: "Stores",
+          tabBarIcon: ({ color }) => <ShoppingBag color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="bookings"
+        options={{
+          title: "Bookings",
+          tabBarIcon: ({ color }) => <BookOpen color={color} size={24} />,
         }}
       />
       <Tabs.Screen

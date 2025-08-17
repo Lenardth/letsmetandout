@@ -1,39 +1,43 @@
-import { useState, useCallback } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  RefreshControl,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  Edit3,
-  Settings,
-  Camera,
-  MapPin,
-  Users,
-  Calendar,
-  Star,
-  Award,
-  TrendingUp,
-  ChevronRight,
-  Shield,
-  Bell,
-  HelpCircle,
-  LogOut,
-  Wallet,
-  UserPlus,
-} from "lucide-react-native";
-import {
-  useFonts,
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
 } from "@expo-google-fonts/inter";
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle,
+  ChevronRight,
+  Edit3,
+  Lock,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Phone,
+  PhoneCall,
+  Settings,
+  Shield,
+  ShieldCheck,
+  UserCheck,
+  Users,
+  Zap
+} from "lucide-react-native";
+import { useCallback, useState } from "react";
+import {
+  Alert,
+  Image,
+  RefreshControl,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../utils/theme";
 
 export default function ProfileScreen() {
@@ -41,11 +45,16 @@ export default function ProfileScreen() {
   const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [safetyMode, setSafetyMode] = useState(true);
+  const [locationSharing, setLocationSharing] = useState(true);
+  const [emergencyMode, setEmergencyMode] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("verified");
 
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
   });
 
   const onRefresh = useCallback(() => {
@@ -58,57 +67,106 @@ export default function ProfileScreen() {
     setIsScrolled(scrollY > 0);
   }, []);
 
-  const userProfile = {
-    name: "Sipho Mthembu",
-    age: 26,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face",
-    location: "Cape Town, WC",
-    bio: "Love exploring SA's beautiful landscapes, trying new restaurants, and meeting interesting people. Always up for a good braai or coffee chat!",
-    interests: ["Coffee", "Hiking", "Photography", "Braai", "Rugby", "Travel"],
-    joinedDate: "March 2024",
-    photos: [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=200&fit=crop",
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=200&h=200&fit=crop",
-      "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=200&h=200&fit=crop",
-    ],
+  const handleEmergencyAlert = () => {
+    Alert.alert(
+      "Emergency Alert",
+      "This will send your location and alert to your emergency contacts and local authorities. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Send Alert", 
+          style: "destructive",
+          onPress: () => {
+            setEmergencyMode(true);
+            // Trigger emergency protocol
+          }
+        },
+      ]
+    );
   };
 
-  const stats = [
-    { label: "Connections", value: 47, icon: UserPlus },
-    { label: "Groups Joined", value: 8, icon: Users },
-    { label: "Meetups", value: 15, icon: Calendar },
+  const userProfile = {
+    name: "Thabo Mthembu",
+    username: "@thabo_m",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face",
+    location: "Cape Town, South Africa",
+    joinDate: "March 2023",
+    rating: 4.8,
+    totalMeetups: 47,
+    groupsJoined: 12,
+    safetyScore: 95,
+    verificationBadges: ["ID Verified", "Phone Verified", "Address Verified"],
+  };
+
+  const emergencyContacts = [
+    { name: "Nomsa Mthembu", relation: "Sister", phone: "+27 82 123 4567" },
+    { name: "Sipho Dlamini", relation: "Friend", phone: "+27 83 987 6543" },
   ];
 
-  const achievements = [
+  const safetyFeatures = [
     {
-      title: "Social Explorer",
-      description: "Joined 5+ different groups",
-      icon: Users,
+      id: 1,
+      title: "Real-time Location Sharing",
+      description: "Share your location with trusted contacts during meetups",
+      icon: Navigation,
+      enabled: locationSharing,
+      toggle: setLocationSharing,
       color: colors.primary,
     },
     {
-      title: "Adventure Seeker",
-      description: "Attended outdoor activities",
-      icon: TrendingUp,
+      id: 2,
+      title: "Safety Check-ins",
+      description: "Automatic safety check-ins during events",
+      icon: ShieldCheck,
+      enabled: safetyMode,
+      toggle: setSafetyMode,
       color: colors.success,
     },
     {
-      title: "Community Builder",
-      description: "Helped organize 3+ meetups",
-      icon: Star,
-      color: colors.warning,
+      id: 3,
+      title: "Emergency Alert",
+      description: "Quick access to emergency services and contacts",
+      icon: AlertTriangle,
+      enabled: true,
+      action: handleEmergencyAlert,
+      color: colors.error,
+    },
+    {
+      id: 4,
+      title: "Group Verification",
+      description: "Only join verified groups with background-checked hosts",
+      icon: UserCheck,
+      enabled: true,
+      color: colors.info,
     },
   ];
 
-  const menuItems = [
-    { title: "Edit Profile", icon: Edit3, color: colors.primary },
-    { title: "My Groups", icon: Users, color: colors.textSecondary },
-    { title: "Wallet & Payments", icon: Wallet, color: colors.textSecondary },
-    { title: "Privacy & Safety", icon: Shield, color: colors.textSecondary },
-    { title: "Notifications", icon: Bell, color: colors.textSecondary },
-    { title: "Settings", icon: Settings, color: colors.textSecondary },
-    { title: "Help & Support", icon: HelpCircle, color: colors.textSecondary },
+  const profileSections = [
+    {
+      title: "Account Settings",
+      items: [
+        { title: "Edit Profile", icon: Edit3, action: () => {} },
+        { title: "Privacy Settings", icon: Lock, action: () => {} },
+        { title: "Notification Preferences", icon: Bell, action: () => {} },
+      ],
+    },
+    {
+      title: "Safety & Security",
+      items: [
+        { title: "Emergency Contacts", icon: PhoneCall, action: () => {} },
+        { title: "Safety Settings", icon: Shield, action: () => {} },
+        { title: "Verification Center", icon: CheckCircle, action: () => {} },
+        { title: "Report Safety Issue", icon: AlertTriangle, action: () => {} },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { title: "Help Center", icon: MessageCircle, action: () => {} },
+        { title: "Contact Support", icon: Phone, action: () => {} },
+        { title: "Community Guidelines", icon: Users, action: () => {} },
+      ],
+    },
   ];
 
   if (!loaded && !error) {
@@ -156,18 +214,44 @@ export default function ProfileScreen() {
           >
             Profile
           </Text>
-          <TouchableOpacity
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: colors.surfaceElevated,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Edit3 size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            {emergencyMode && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.error,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Zap size={16} color="#FFFFFF" />
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 12,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  EMERGENCY
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: colors.surfaceElevated,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Settings size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -184,7 +268,7 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Profile Card */}
+        {/* Profile Header */}
         <View
           style={{
             marginHorizontal: 20,
@@ -195,14 +279,14 @@ export default function ProfileScreen() {
             colors={[colors.primary, colors.primaryLight]}
             style={{
               borderRadius: 20,
-              padding: 20,
+              padding: 24,
             }}
           >
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 16,
+                marginBottom: 20,
               }}
             >
               <View style={{ position: "relative" }}>
@@ -216,42 +300,55 @@ export default function ProfileScreen() {
                     borderColor: "#FFFFFF",
                   }}
                 />
-                <TouchableOpacity
-                  style={{
-                    position: "absolute",
-                    bottom: 2,
-                    right: 2,
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: "#FFFFFF",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Camera size={16} color={colors.primary} />
-                </TouchableOpacity>
+                {verificationStatus === "verified" && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: colors.success,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 2,
+                      borderColor: "#FFFFFF",
+                    }}
+                  >
+                    <CheckCircle size={14} color="#FFFFFF" />
+                  </View>
+                )}
               </View>
 
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text
                   style={{
-                    fontFamily: "Inter_600SemiBold",
+                    fontFamily: "Inter_700Bold",
                     fontSize: 24,
                     color: "#FFFFFF",
                     marginBottom: 4,
                   }}
                 >
-                  {userProfile.name}, {userProfile.age}
+                  {userProfile.name}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 16,
+                    color: "rgba(255,255,255,0.8)",
+                    marginBottom: 8,
+                  }}
+                >
+                  {userProfile.username}
                 </Text>
                 <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    marginBottom: 4,
                   }}
                 >
-                  <MapPin size={16} color="rgba(255,255,255,0.8)" />
+                  <MapPin size={14} color="rgba(255,255,255,0.8)" />
                   <Text
                     style={{
                       fontFamily: "Inter_400Regular",
@@ -263,6 +360,25 @@ export default function ProfileScreen() {
                     {userProfile.location}
                   </Text>
                 </View>
+              </View>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <View style={{ alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontFamily: "Inter_700Bold",
+                    fontSize: 20,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {userProfile.rating}
+                </Text>
                 <Text
                   style={{
                     fontFamily: "Inter_400Regular",
@@ -270,188 +386,74 @@ export default function ProfileScreen() {
                     color: "rgba(255,255,255,0.7)",
                   }}
                 >
-                  Member since {userProfile.joinedDate}
+                  Rating
                 </Text>
               </View>
-            </View>
-
-            <Text
-              style={{
-                fontFamily: "Inter_400Regular",
-                fontSize: 14,
-                color: "rgba(255,255,255,0.9)",
-                lineHeight: 20,
-                marginBottom: 16,
-              }}
-            >
-              {userProfile.bio}
-            </Text>
-
-            {/* Interests */}
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 8,
-              }}
-            >
-              {userProfile.interests.map((interest, index) => (
-                <View
-                  key={index}
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Inter_500Medium",
-                      fontSize: 12,
-                      color: "#FFFFFF",
-                    }}
-                  >
-                    {interest}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Stats */}
-        <View
-          style={{
-            marginHorizontal: 20,
-            marginBottom: 24,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.surfaceElevated,
-              borderRadius: 16,
-              padding: 20,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              borderWidth: isDark ? 1 : 0,
-              borderColor: colors.border,
-            }}
-          >
-            {stats.map((stat, index) => (
-              <View
-                key={index}
-                style={{
-                  alignItems: "center",
-                  flex: 1,
-                }}
-              >
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: colors.primary,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <stat.icon size={24} color="#FFFFFF" />
-                </View>
+              <View style={{ alignItems: "center" }}>
                 <Text
                   style={{
-                    fontFamily: "Inter_600SemiBold",
+                    fontFamily: "Inter_700Bold",
                     fontSize: 20,
-                    color: colors.text,
-                    marginBottom: 2,
+                    color: "#FFFFFF",
                   }}
                 >
-                  {stat.value}
+                  {userProfile.totalMeetups}
                 </Text>
                 <Text
                   style={{
                     fontFamily: "Inter_400Regular",
                     fontSize: 12,
-                    color: colors.textSecondary,
-                    textAlign: "center",
+                    color: "rgba(255,255,255,0.7)",
                   }}
                 >
-                  {stat.label}
+                  Meetups
                 </Text>
               </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Photo Gallery */}
-        <View
-          style={{
-            marginHorizontal: 20,
-            marginBottom: 24,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: "Inter_600SemiBold",
-                fontSize: 20,
-                color: colors.text,
-              }}
-            >
-              My Photos
-            </Text>
-            <TouchableOpacity>
-              <Text
-                style={{
-                  fontFamily: "Inter_500Medium",
-                  fontSize: 14,
-                  color: colors.primary,
-                }}
-              >
-                Add Photos
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            {userProfile.photos.map((photo, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  width: (100 - 3 * 8) / 4 + "%",
-                  aspectRatio: 1,
-                  borderRadius: 12,
-                  overflow: "hidden",
-                }}
-              >
-                <Image
-                  source={{ uri: photo }}
+              <View style={{ alignItems: "center" }}>
+                <Text
                   style={{
-                    width: "100%",
-                    height: "100%",
+                    fontFamily: "Inter_700Bold",
+                    fontSize: 20,
+                    color: "#FFFFFF",
                   }}
-                  resizeMode="cover"
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
+                >
+                  {userProfile.groupsJoined}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  Groups
+                </Text>
+              </View>
+              <View style={{ alignItems: "center" }}>
+                <Text
+                  style={{
+                    fontFamily: "Inter_700Bold",
+                    fontSize: 20,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {userProfile.safetyScore}%
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  Safety
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
         </View>
 
-        {/* Achievements */}
+        {/* Safety Features */}
         <View
           style={{
             marginHorizontal: 20,
@@ -461,40 +463,45 @@ export default function ProfileScreen() {
           <Text
             style={{
               fontFamily: "Inter_600SemiBold",
-              fontSize: 20,
+              fontSize: 18,
               color: colors.text,
               marginBottom: 16,
             }}
           >
-            Achievements
+            Safety Features
           </Text>
 
-          <View style={{ gap: 12 }}>
-            {achievements.map((achievement, index) => (
-              <TouchableOpacity
-                key={index}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              borderWidth: isDark ? 1 : 0,
+              borderColor: colors.border,
+            }}
+          >
+            {safetyFeatures.map((feature, index) => (
+              <View
+                key={feature.id}
                 style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 16,
-                  padding: 16,
                   flexDirection: "row",
                   alignItems: "center",
-                  borderWidth: isDark ? 1 : 0,
-                  borderColor: colors.border,
+                  padding: 16,
+                  borderBottomWidth: index < safetyFeatures.length - 1 ? 1 : 0,
+                  borderBottomColor: colors.divider,
                 }}
               >
                 <View
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: achievement.color,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: feature.color,
                     justifyContent: "center",
                     alignItems: "center",
-                    marginRight: 16,
+                    marginRight: 12,
                   }}
                 >
-                  <achievement.icon size={24} color="#FFFFFF" />
+                  <feature.icon size={20} color="#FFFFFF" />
                 </View>
 
                 <View style={{ flex: 1 }}>
@@ -506,7 +513,7 @@ export default function ProfileScreen() {
                       marginBottom: 2,
                     }}
                   >
-                    {achievement.title}
+                    {feature.title}
                   </Text>
                   <Text
                     style={{
@@ -515,33 +522,81 @@ export default function ProfileScreen() {
                       color: colors.textSecondary,
                     }}
                   >
-                    {achievement.description}
+                    {feature.description}
                   </Text>
                 </View>
 
-                <Award size={20} color={achievement.color} />
-              </TouchableOpacity>
+                {feature.toggle ? (
+                  <Switch
+                    value={feature.enabled}
+                    onValueChange={feature.toggle}
+                    trackColor={{ false: colors.border, true: feature.color }}
+                    thumbColor="#FFFFFF"
+                  />
+                ) : feature.action ? (
+                  <TouchableOpacity
+                    onPress={feature.action}
+                    style={{
+                      backgroundColor: feature.color,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 12,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      ALERT
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <ChevronRight size={20} color={colors.textSecondary} />
+                )}
+              </View>
             ))}
           </View>
         </View>
 
-        {/* Settings Menu */}
+        {/* Emergency Contacts */}
         <View
           style={{
             marginHorizontal: 20,
             marginBottom: 24,
           }}
         >
-          <Text
+          <View
             style={{
-              fontFamily: "Inter_600SemiBold",
-              fontSize: 20,
-              color: colors.text,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
               marginBottom: 16,
             }}
           >
-            Settings
-          </Text>
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 18,
+                color: colors.text,
+              }}
+            >
+              Emergency Contacts
+            </Text>
+            <TouchableOpacity>
+              <Text
+                style={{
+                  fontFamily: "Inter_500Medium",
+                  fontSize: 14,
+                  color: colors.primary,
+                }}
+              >
+                Add Contact
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <View
             style={{
@@ -551,67 +606,187 @@ export default function ProfileScreen() {
               borderColor: colors.border,
             }}
           >
-            {menuItems.map((item, index) => (
-              <TouchableOpacity
+            {emergencyContacts.map((contact, index) => (
+              <View
                 key={index}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
                   padding: 16,
-                  borderBottomWidth: index < menuItems.length - 1 ? 1 : 0,
+                  borderBottomWidth: index < emergencyContacts.length - 1 ? 1 : 0,
                   borderBottomColor: colors.divider,
                 }}
               >
-                <item.icon size={20} color={item.color} />
-                <Text
+                <View
                   style={{
-                    fontFamily: "Inter_500Medium",
-                    fontSize: 16,
-                    color: colors.text,
-                    marginLeft: 16,
-                    flex: 1,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.error,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginRight: 12,
                   }}
                 >
-                  {item.title}
-                </Text>
-                <ChevronRight size={20} color={colors.border} />
-              </TouchableOpacity>
+                  <PhoneCall size={20} color="#FFFFFF" />
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 16,
+                      color: colors.text,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {contact.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_400Regular",
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {contact.relation} • {contact.phone}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: colors.success,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 12,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    CALL
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
 
-        {/* Logout Button */}
+        {/* Verification Badges */}
         <View
           style={{
             marginHorizontal: 20,
-            marginBottom: 20,
+            marginBottom: 24,
           }}
         >
-          <TouchableOpacity
+          <Text
             style={{
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              paddingVertical: 16,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              borderWidth: isDark ? 1 : 0,
-              borderColor: colors.border,
+              fontFamily: "Inter_600SemiBold",
+              fontSize: 18,
+              color: colors.text,
+              marginBottom: 16,
             }}
           >
-            <LogOut size={20} color={colors.danger} />
+            Verification Status
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            {userProfile.verificationBadges.map((badge, index) => (
+              <View
+                key={index}
+                style={{
+                  backgroundColor: colors.success,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <CheckCircle size={14} color="#FFFFFF" />
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 12,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {badge}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Profile Sections */}
+        {profileSections.map((section, sectionIndex) => (
+          <View
+            key={sectionIndex}
+            style={{
+              marginHorizontal: 20,
+              marginBottom: 24,
+            }}
+          >
             <Text
               style={{
                 fontFamily: "Inter_600SemiBold",
-                fontSize: 16,
-                color: colors.danger,
-                marginLeft: 8,
+                fontSize: 18,
+                color: colors.text,
+                marginBottom: 16,
               }}
             >
-              Sign Out
+              {section.title}
             </Text>
-          </TouchableOpacity>
-        </View>
+
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 16,
+                borderWidth: isDark ? 1 : 0,
+                borderColor: colors.border,
+              }}
+            >
+              {section.items.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={item.action}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    padding: 16,
+                    borderBottomWidth: index < section.items.length - 1 ? 1 : 0,
+                    borderBottomColor: colors.divider,
+                  }}
+                >
+                  <item.icon size={20} color={colors.textSecondary} style={{ marginRight: 12 }} />
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontFamily: "Inter_500Medium",
+                      fontSize: 16,
+                      color: colors.text,
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                  <ChevronRight size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );

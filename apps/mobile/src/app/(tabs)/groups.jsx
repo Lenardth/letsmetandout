@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,12 +26,33 @@ import {
   Mountain,
   Filter,
   Search,
+  Shield,
+  AlertTriangle,
+  DollarSign,
+  UserMinus,
+  UserPlus,
+  Lock,
+  Unlock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Settings,
+  Star,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  Calculator,
+  CreditCard,
+  Wallet,
+  Bell,
+  Info,
 } from "lucide-react-native";
 import {
   useFonts,
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
+  Inter_700Bold,
 } from "@expo-google-fonts/inter";
 import { useTheme } from "../../utils/theme";
 
@@ -38,11 +62,16 @@ export default function GroupsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [withdrawalReason, setWithdrawalReason] = useState("");
 
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    Inter_700Bold,
   });
 
   const onRefresh = useCallback(() => {
@@ -55,6 +84,46 @@ export default function GroupsScreen() {
     setIsScrolled(scrollY > 0);
   }, []);
 
+  const calculatePenalty = (amount, daysBeforeEvent) => {
+    // 20% penalty for withdrawals
+    const basePenalty = amount * 0.2;
+    
+    // Additional penalty based on timing
+    if (daysBeforeEvent <= 1) {
+      return basePenalty * 1.5; // 30% penalty for last-minute withdrawals
+    } else if (daysBeforeEvent <= 3) {
+      return basePenalty * 1.2; // 24% penalty for short notice
+    }
+    
+    return basePenalty; // 20% standard penalty
+  };
+
+  const handleWithdrawal = () => {
+    if (!withdrawalAmount || !selectedGroup) return;
+    
+    const amount = parseFloat(withdrawalAmount);
+    const penalty = calculatePenalty(amount, selectedGroup.daysUntilEvent);
+    const netAmount = amount - penalty;
+    
+    Alert.alert(
+      "Confirm Withdrawal",
+      `Withdrawal: R${amount.toFixed(2)}\nPenalty (20%): R${penalty.toFixed(2)}\nYou'll receive: R${netAmount.toFixed(2)}\n\nThis action requires group approval.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Request Withdrawal", 
+          style: "destructive",
+          onPress: () => {
+            // Submit withdrawal request
+            setShowWithdrawalModal(false);
+            setWithdrawalAmount("");
+            setWithdrawalReason("");
+          }
+        },
+      ]
+    );
+  };
+
   const groups = [
     {
       id: 1,
@@ -65,9 +134,14 @@ export default function GroupsScreen() {
       nextMeetup: "Tomorrow, 2:00 PM",
       location: "V&A Waterfront",
       budget: "R120",
+      yourContribution: 120.00,
+      totalPool: 480.00,
+      daysUntilEvent: 1,
       host: {
         name: "Sarah",
         avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b2c5?w=40&h=40&fit=crop&crop=face",
+        verified: true,
+        rating: 4.8,
       },
       memberAvatars: [
         "https://images.unsplash.com/photo-1494790108755-2616b612b2c5?w=30&h=30&fit=crop&crop=face",
@@ -77,6 +151,11 @@ export default function GroupsScreen() {
       ],
       status: "active",
       category: "coffee",
+      safetyScore: 95,
+      escrowStatus: "locked",
+      withdrawalPolicy: "20% penalty, requires 3/4 approval",
+      recentWithdrawals: 0,
+      trustScore: 98,
     },
     {
       id: 2,
@@ -87,9 +166,14 @@ export default function GroupsScreen() {
       nextMeetup: "Saturday, 4:00 PM",
       location: "Johannesburg North",
       budget: "R250",
+      yourContribution: 250.00,
+      totalPool: 1250.00,
+      daysUntilEvent: 3,
       host: {
         name: "Mandla",
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
+        verified: true,
+        rating: 4.9,
       },
       memberAvatars: [
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=30&h=30&fit=crop&crop=face",
@@ -100,6 +184,11 @@ export default function GroupsScreen() {
       ],
       status: "full",
       category: "food",
+      safetyScore: 92,
+      escrowStatus: "locked",
+      withdrawalPolicy: "20% penalty, requires 4/5 approval",
+      recentWithdrawals: 1,
+      trustScore: 94,
     },
     {
       id: 3,
@@ -107,51 +196,526 @@ export default function GroupsScreen() {
       activity: "Table Mountain Hike",
       members: 3,
       maxMembers: 4,
-      nextMeetup: "Sunday, 7:00 AM",
-      location: "Table Mountain",
-      budget: "R80",
+      nextMeetup: "Sunday, 8:00 AM",
+      location: "Table Mountain, Cape Town",
+      budget: "R180",
+      yourContribution: 180.00,
+      totalPool: 540.00,
+      daysUntilEvent: 5,
       host: {
-        name: "Nomsa",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=40&h=40&fit=crop&crop=face",
+        name: "Priya",
+        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face",
+        verified: true,
+        rating: 4.7,
       },
       memberAvatars: [
-        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=30&h=30&fit=crop&crop=face",
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=30&h=30&fit=crop&crop=face",
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=30&h=30&fit=crop&crop=face",
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=30&h=30&fit=crop&crop=face",
       ],
       status: "active",
       category: "outdoor",
+      safetyScore: 88,
+      escrowStatus: "pending",
+      withdrawalPolicy: "20% penalty, requires 2/3 approval",
+      recentWithdrawals: 0,
+      trustScore: 91,
     },
   ];
 
-  const filterOptions = [
-    { key: "all", label: "All Groups", count: groups.length },
-    { key: "active", label: "Active", count: groups.filter(g => g.status === "active").length },
-    { key: "available", label: "Join Available", count: groups.filter(g => g.members < g.maxMembers).length },
-    { key: "my-groups", label: "My Groups", count: 2 },
+  const filters = [
+    { key: "all", title: "All Groups", count: groups.length },
+    { key: "active", title: "Active", count: groups.filter(g => g.status === "active").length },
+    { key: "full", title: "Full", count: groups.filter(g => g.status === "full").length },
+    { key: "pending", title: "Pending", count: groups.filter(g => g.escrowStatus === "pending").length },
   ];
 
-  const getActivityIcon = (category) => {
-    switch (category) {
-      case "coffee": return Coffee;
-      case "food": return Utensils;
-      case "outdoor": return Mountain;
-      default: return Users;
-    }
-  };
+  const renderWithdrawalModal = () => (
+    <Modal
+      visible={showWithdrawalModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowWithdrawalModal(false)}
+    >
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          justifyContent: "flex-end",
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: colors.background,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            padding: 20,
+            paddingBottom: insets.bottom + 20,
+            maxHeight: "80%",
+          }}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "Inter_600SemiBold",
+                  fontSize: 20,
+                  color: colors.text,
+                }}
+              >
+                Request Withdrawal
+              </Text>
+              <TouchableOpacity onPress={() => setShowWithdrawalModal(false)}>
+                <XCircle size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-  const filteredGroups = groups.filter((group) => {
-    switch (activeFilter) {
-      case "active":
-        return group.status === "active";
-      case "available":
-        return group.members < group.maxMembers;
-      case "my-groups":
-        return group.id <= 2; // Mock: user is in first 2 groups
-      default:
-        return true;
-    }
-  });
+            {selectedGroup && (
+              <>
+                {/* Group Info */}
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 20,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 16,
+                      color: colors.text,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {selectedGroup.name}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_400Regular",
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      Your Contribution:
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: colors.text,
+                      }}
+                    >
+                      R {selectedGroup.yourContribution.toFixed(2)}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_400Regular",
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      Event Date:
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: colors.text,
+                      }}
+                    >
+                      {selectedGroup.nextMeetup}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_400Regular",
+                        fontSize: 14,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      Withdrawal Policy:
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: colors.warning,
+                      }}
+                    >
+                      {selectedGroup.withdrawalPolicy}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Penalty Warning */}
+                <View
+                  style={{
+                    backgroundColor: colors.error + "20",
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 20,
+                    borderLeftWidth: 4,
+                    borderLeftColor: colors.error,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <AlertTriangle size={20} color={colors.error} />
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 16,
+                        color: colors.error,
+                        marginLeft: 8,
+                      }}
+                    >
+                      Withdrawal Penalty
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_400Regular",
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Withdrawing from this group will incur a 20% penalty. The penalty helps maintain group commitment and covers administrative costs.
+                  </Text>
+                  {selectedGroup.daysUntilEvent <= 3 && (
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: colors.error,
+                      }}
+                    >
+                      ⚠️ Additional penalty applies for short notice withdrawals!
+                    </Text>
+                  )}
+                </View>
+
+                {/* Withdrawal Amount */}
+                <View style={{ marginBottom: 20 }}>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 16,
+                      color: colors.text,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Withdrawal Amount
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: colors.surfaceElevated,
+                      borderRadius: 12,
+                      paddingHorizontal: 16,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <DollarSign size={20} color={colors.textSecondary} />
+                    <TextInput
+                      value={withdrawalAmount}
+                      onChangeText={setWithdrawalAmount}
+                      placeholder="Enter amount"
+                      placeholderTextColor={colors.textTertiary}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 12,
+                        paddingHorizontal: 8,
+                        fontFamily: "Inter_500Medium",
+                        fontSize: 16,
+                        color: colors.text,
+                      }}
+                      keyboardType="numeric"
+                    />
+                  </View>
+
+                  {/* Quick Amount Buttons */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    {[25, 50, 75, 100].map((percentage) => {
+                      const amount = (selectedGroup.yourContribution * percentage / 100).toFixed(2);
+                      return (
+                        <TouchableOpacity
+                          key={percentage}
+                          onPress={() => setWithdrawalAmount(amount)}
+                          style={{
+                            flex: 1,
+                            backgroundColor: colors.surface,
+                            paddingVertical: 8,
+                            paddingHorizontal: 12,
+                            borderRadius: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: "Inter_600SemiBold",
+                              fontSize: 12,
+                              color: colors.text,
+                            }}
+                          >
+                            {percentage}%
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "Inter_400Regular",
+                              fontSize: 10,
+                              color: colors.textSecondary,
+                            }}
+                          >
+                            R{amount}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {/* Penalty Calculation */}
+                  {withdrawalAmount && (
+                    <View
+                      style={{
+                        backgroundColor: colors.surface,
+                        borderRadius: 12,
+                        padding: 16,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 14,
+                          color: colors.text,
+                          marginBottom: 8,
+                        }}
+                      >
+                        Penalty Calculation
+                      </Text>
+                      {(() => {
+                        const amount = parseFloat(withdrawalAmount) || 0;
+                        const penalty = calculatePenalty(amount, selectedGroup.daysUntilEvent);
+                        const netAmount = amount - penalty;
+                        
+                        return (
+                          <>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                marginBottom: 4,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontFamily: "Inter_400Regular",
+                                  fontSize: 14,
+                                  color: colors.textSecondary,
+                                }}
+                              >
+                                Withdrawal Amount:
+                              </Text>
+                              <Text
+                                style={{
+                                  fontFamily: "Inter_600SemiBold",
+                                  fontSize: 14,
+                                  color: colors.text,
+                                }}
+                              >
+                                R {amount.toFixed(2)}
+                              </Text>
+                            </View>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                marginBottom: 4,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontFamily: "Inter_400Regular",
+                                  fontSize: 14,
+                                  color: colors.error,
+                                }}
+                              >
+                                Penalty ({Math.round((penalty/amount)*100)}%):
+                              </Text>
+                              <Text
+                                style={{
+                                  fontFamily: "Inter_600SemiBold",
+                                  fontSize: 14,
+                                  color: colors.error,
+                                }}
+                              >
+                                -R {penalty.toFixed(2)}
+                              </Text>
+                            </View>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                borderTopWidth: 1,
+                                borderTopColor: colors.border,
+                                paddingTop: 8,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontFamily: "Inter_600SemiBold",
+                                  fontSize: 16,
+                                  color: colors.text,
+                                }}
+                              >
+                                You'll Receive:
+                              </Text>
+                              <Text
+                                style={{
+                                  fontFamily: "Inter_700Bold",
+                                  fontSize: 16,
+                                  color: colors.success,
+                                }}
+                              >
+                                R {netAmount.toFixed(2)}
+                              </Text>
+                            </View>
+                          </>
+                        );
+                      })()}
+                    </View>
+                  )}
+                </View>
+
+                {/* Reason */}
+                <View style={{ marginBottom: 20 }}>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 16,
+                      color: colors.text,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Reason for Withdrawal (Optional)
+                  </Text>
+                  <TextInput
+                    value={withdrawalReason}
+                    onChangeText={setWithdrawalReason}
+                    placeholder="Explain why you need to withdraw..."
+                    placeholderTextColor={colors.textTertiary}
+                    multiline
+                    numberOfLines={3}
+                    style={{
+                      backgroundColor: colors.surfaceElevated,
+                      borderRadius: 12,
+                      padding: 16,
+                      fontFamily: "Inter_400Regular",
+                      fontSize: 14,
+                      color: colors.text,
+                      textAlignVertical: "top",
+                    }}
+                  />
+                </View>
+
+                {/* Action Buttons */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 12,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setShowWithdrawalModal(false)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: colors.surfaceElevated,
+                      borderRadius: 12,
+                      paddingVertical: 16,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 16,
+                        color: colors.text,
+                      }}
+                    >
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleWithdrawal}
+                    disabled={!withdrawalAmount}
+                    style={{
+                      flex: 1,
+                      backgroundColor: withdrawalAmount ? colors.error : colors.border,
+                      borderRadius: 12,
+                      paddingVertical: 16,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 16,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      Request Withdrawal
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (!loaded && !error) {
     return (
@@ -187,7 +751,7 @@ export default function GroupsScreen() {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 8,
+            marginBottom: 16,
           }}
         >
           <Text
@@ -226,15 +790,64 @@ export default function GroupsScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <Text
-          style={{
-            fontFamily: "Inter_400Regular",
-            fontSize: 16,
-            color: colors.textSecondary,
-          }}
+
+        {/* Filter Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 12 }}
         >
-          Join groups and plan amazing meetups
-        </Text>
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter.key}
+              onPress={() => setActiveFilter(filter.key)}
+              style={{
+                backgroundColor:
+                  activeFilter === filter.key ? colors.primary : colors.surfaceElevated,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "Inter_600SemiBold",
+                  fontSize: 14,
+                  color:
+                    activeFilter === filter.key ? "#FFFFFF" : colors.text,
+                }}
+              >
+                {filter.title}
+              </Text>
+              <View
+                style={{
+                  backgroundColor:
+                    activeFilter === filter.key
+                      ? "rgba(255,255,255,0.3)"
+                      : colors.primary,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 10,
+                  minWidth: 20,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 10,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {filter.count}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -250,306 +863,346 @@ export default function GroupsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Create Group CTA */}
-        <View
-          style={{
-            marginHorizontal: 20,
-            marginBottom: 24,
-          }}
-        >
-          <LinearGradient
-            colors={[colors.primary, colors.primaryLight]}
-            style={{
-              borderRadius: 16,
-              padding: 20,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontFamily: "Inter_600SemiBold",
-                    fontSize: 18,
-                    color: "#FFFFFF",
-                    marginBottom: 4,
-                  }}
-                >
-                  Start Your Own Group
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: "Inter_400Regular",
-                    fontSize: 14,
-                    color: "rgba(255,255,255,0.9)",
-                    marginBottom: 16,
-                  }}
-                >
-                  Create a group, invite friends, and plan activities together
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 12,
-                    alignSelf: "flex-start",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Inter_600SemiBold",
-                      fontSize: 14,
-                      color: "#FFFFFF",
-                    }}
-                  >
-                    Create Group
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                  backgroundColor: "rgba(255,255,255,0.2)",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Plus size={30} color="#FFFFFF" />
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Filter Tabs */}
-        <View style={{ marginBottom: 20 }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-          >
-            {filterOptions.map((filter, index) => (
-              <TouchableOpacity
-                key={filter.key}
-                onPress={() => setActiveFilter(filter.key)}
-                style={{
-                  backgroundColor:
-                    activeFilter === filter.key
-                      ? colors.primary
-                      : colors.surfaceElevated,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 12,
-                  marginRight: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Inter_500Medium",
-                    fontSize: 14,
-                    color:
-                      activeFilter === filter.key
-                        ? "#FFFFFF"
-                        : colors.textSecondary,
-                  }}
-                >
-                  {filter.label}
-                </Text>
-                <View
-                  style={{
-                    backgroundColor:
-                      activeFilter === filter.key
-                        ? "rgba(255,255,255,0.3)"
-                        : colors.border,
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 10,
-                    marginLeft: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Inter_600SemiBold",
-                      fontSize: 12,
-                      color:
-                        activeFilter === filter.key
-                          ? "#FFFFFF"
-                          : colors.textSecondary,
-                    }}
-                  >
-                    {filter.count}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
         {/* Groups List */}
         <View style={{ paddingHorizontal: 20 }}>
-          {filteredGroups.map((group, index) => {
-            const ActivityIcon = getActivityIcon(group.category);
-            const isJoinable = group.members < group.maxMembers;
-            
-            return (
-              <TouchableOpacity
+          {groups
+            .filter((group) => {
+              if (activeFilter === "all") return true;
+              if (activeFilter === "active") return group.status === "active";
+              if (activeFilter === "full") return group.status === "full";
+              if (activeFilter === "pending") return group.escrowStatus === "pending";
+              return true;
+            })
+            .map((group) => (
+              <View
                 key={group.id}
                 style={{
                   backgroundColor: colors.surface,
-                  borderRadius: 16,
-                  padding: 16,
-                  marginBottom: index < filteredGroups.length - 1 ? 16 : 0,
+                  borderRadius: 20,
+                  padding: 20,
+                  marginBottom: 16,
                   borderWidth: isDark ? 1 : 0,
                   borderColor: colors.border,
                 }}
               >
+                {/* Group Header */}
                 <View
                   style={{
                     flexDirection: "row",
+                    justifyContent: "space-between",
                     alignItems: "flex-start",
-                    marginBottom: 12,
+                    marginBottom: 16,
                   }}
                 >
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 24,
-                      backgroundColor: colors.primary,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 12,
-                    }}
-                  >
-                    <ActivityIcon size={24} color="#FFFFFF" />
-                  </View>
-
                   <View style={{ flex: 1 }}>
                     <View
                       style={{
                         flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: 4,
+                        alignItems: "center",
+                        marginBottom: 8,
                       }}
                     >
                       <Text
                         style={{
                           fontFamily: "Inter_600SemiBold",
-                          fontSize: 16,
+                          fontSize: 18,
                           color: colors.text,
                           flex: 1,
                         }}
                       >
                         {group.name}
                       </Text>
-                      <View
-                        style={{
-                          backgroundColor: isJoinable ? colors.success : colors.warning,
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 12,
-                          marginLeft: 8,
-                        }}
-                      >
-                        <Text
+                      {group.host.verified && (
+                        <View
                           style={{
-                            fontFamily: "Inter_600SemiBold",
-                            fontSize: 10,
-                            color: "#FFFFFF",
+                            backgroundColor: colors.success,
+                            borderRadius: 10,
+                            padding: 4,
+                            marginLeft: 8,
                           }}
                         >
-                          {isJoinable ? "OPEN" : "FULL"}
-                        </Text>
-                      </View>
+                          <Shield size={12} color="#FFFFFF" />
+                        </View>
+                      )}
                     </View>
                     <Text
                       style={{
                         fontFamily: "Inter_500Medium",
-                        fontSize: 14,
+                        fontSize: 16,
                         color: colors.primary,
-                        marginBottom: 8,
+                        marginBottom: 4,
                       }}
                     >
                       {group.activity}
                     </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <MapPin size={14} color={colors.textSecondary} />
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 14,
+                          color: colors.textSecondary,
+                          marginLeft: 4,
+                        }}
+                      >
+                        {group.location}
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Calendar size={14} color={colors.textSecondary} />
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 14,
+                          color: colors.textSecondary,
+                          marginLeft: 4,
+                        }}
+                      >
+                        {group.nextMeetup}
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Group Details */}
-                <View style={{ marginBottom: 12 }}>
                   <View
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Calendar size={14} color={colors.textSecondary} />
-                    <Text
-                      style={{
-                        fontFamily: "Inter_400Regular",
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        marginLeft: 6,
-                      }}
-                    >
-                      {group.nextMeetup}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 6,
-                    }}
-                  >
-                    <MapPin size={14} color={colors.textSecondary} />
-                    <Text
-                      style={{
-                        fontFamily: "Inter_400Regular",
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        marginLeft: 6,
-                      }}
-                    >
-                      {group.location}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
+                      backgroundColor:
+                        group.status === "active"
+                          ? colors.success
+                          : group.status === "full"
+                          ? colors.warning
+                          : colors.error,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
                     }}
                   >
                     <Text
                       style={{
                         fontFamily: "Inter_600SemiBold",
-                        fontSize: 14,
-                        color: colors.primary,
+                        fontSize: 12,
+                        color: "#FFFFFF",
                       }}
                     >
-                      {group.budget}
+                      {group.status.toUpperCase()}
                     </Text>
-                    <Text
-                      style={{
-                        fontFamily: "Inter_400Regular",
-                        fontSize: 14,
-                        color: colors.textSecondary,
-                        marginLeft: 6,
-                      }}
-                    >
-                      per person
-                    </Text>
+                  </View>
+                </View>
+
+                {/* Financial Info */}
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceElevated,
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 16,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Your Contribution
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_700Bold",
+                          fontSize: 18,
+                          color: colors.primary,
+                        }}
+                      >
+                        R {group.yourContribution.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Total Pool
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 16,
+                          color: colors.text,
+                        }}
+                      >
+                        R {group.totalPool.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 12,
+                          color: colors.textSecondary,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Escrow Status
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        {group.escrowStatus === "locked" ? (
+                          <Lock size={14} color={colors.success} />
+                        ) : (
+                          <Clock size={14} color={colors.warning} />
+                        )}
+                        <Text
+                          style={{
+                            fontFamily: "Inter_600SemiBold",
+                            fontSize: 12,
+                            color:
+                              group.escrowStatus === "locked"
+                                ? colors.success
+                                : colors.warning,
+                          }}
+                        >
+                          {group.escrowStatus.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Safety & Trust Scores */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      borderTopWidth: 1,
+                      borderTopColor: colors.border,
+                      paddingTop: 12,
+                    }}
+                  >
+                    <View style={{ alignItems: "center" }}>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 10,
+                          color: colors.textSecondary,
+                          marginBottom: 2,
+                        }}
+                      >
+                        Safety Score
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Shield size={12} color={colors.success} />
+                        <Text
+                          style={{
+                            fontFamily: "Inter_600SemiBold",
+                            fontSize: 12,
+                            color: colors.success,
+                          }}
+                        >
+                          {group.safetyScore}%
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{ alignItems: "center" }}>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 10,
+                          color: colors.textSecondary,
+                          marginBottom: 2,
+                        }}
+                      >
+                        Trust Score
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Star size={12} color={colors.warning} />
+                        <Text
+                          style={{
+                            fontFamily: "Inter_600SemiBold",
+                            fontSize: 12,
+                            color: colors.warning,
+                          }}
+                        >
+                          {group.trustScore}%
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{ alignItems: "center" }}>
+                      <Text
+                        style={{
+                          fontFamily: "Inter_400Regular",
+                          fontSize: 10,
+                          color: colors.textSecondary,
+                          marginBottom: 2,
+                        }}
+                      >
+                        Withdrawals
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        {group.recentWithdrawals > 0 ? (
+                          <TrendingDown size={12} color={colors.error} />
+                        ) : (
+                          <TrendingUp size={12} color={colors.success} />
+                        )}
+                        <Text
+                          style={{
+                            fontFamily: "Inter_600SemiBold",
+                            fontSize: 12,
+                            color:
+                              group.recentWithdrawals > 0
+                                ? colors.error
+                                : colors.success,
+                          }}
+                        >
+                          {group.recentWithdrawals}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
 
@@ -557,140 +1210,170 @@ export default function GroupsScreen() {
                 <View
                   style={{
                     flexDirection: "row",
-                    justifyContent: "space-between",
                     alignItems: "center",
+                    marginBottom: 16,
                   }}
                 >
                   <View
                     style={{
                       flexDirection: "row",
-                      alignItems: "center",
+                      marginRight: 12,
                     }}
                   >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        marginRight: 12,
-                      }}
-                    >
-                      {group.memberAvatars.map((avatar, idx) => (
-                        <Image
-                          key={idx}
-                          source={{ uri: avatar }}
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: 12,
-                            borderWidth: 2,
-                            borderColor: colors.surface,
-                            marginLeft: idx > 0 ? -8 : 0,
-                          }}
-                        />
-                      ))}
-                      {group.members < group.maxMembers && (
-                        <View
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: 12,
-                            backgroundColor: colors.border,
-                            borderWidth: 2,
-                            borderColor: colors.surface,
-                            marginLeft: -8,
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Plus size={12} color={colors.textSecondary} />
-                        </View>
-                      )}
-                    </View>
-                    <Text
-                      style={{
-                        fontFamily: "Inter_500Medium",
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                      }}
-                    >
-                      {group.members}/{group.maxMembers} members
-                    </Text>
-                  </View>
-
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TouchableOpacity
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        backgroundColor: colors.surfaceElevated,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <MessageCircle size={16} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 8,
-                        borderRadius: 16,
-                        backgroundColor: isJoinable ? colors.primary : colors.border,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
+                    {group.memberAvatars.map((avatar, index) => (
+                      <Image
+                        key={index}
+                        source={{ uri: avatar }}
                         style={{
-                          fontFamily: "Inter_600SemiBold",
-                          fontSize: 12,
-                          color: isJoinable ? "#FFFFFF" : colors.textSecondary,
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          borderWidth: 2,
+                          borderColor: colors.background,
+                          marginLeft: index > 0 ? -8 : 0,
+                        }}
+                      />
+                    ))}
+                    {group.members < group.maxMembers && (
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: colors.surfaceElevated,
+                          borderWidth: 2,
+                          borderColor: colors.background,
+                          marginLeft: -8,
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
-                        {isJoinable ? "Join" : "View"}
-                      </Text>
-                    </TouchableOpacity>
+                        <Plus size={16} color={colors.textSecondary} />
+                      </View>
+                    )}
                   </View>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_500Medium",
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                    }}
+                  >
+                    {group.members}/{group.maxMembers} members
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
-        {/* Empty State */}
-        {filteredGroups.length === 0 && (
-          <View
-            style={{
-              paddingHorizontal: 20,
-              paddingVertical: 40,
-              alignItems: "center",
-            }}
-          >
-            <Users size={48} color={colors.border} />
-            <Text
-              style={{
-                fontFamily: "Inter_600SemiBold",
-                fontSize: 18,
-                color: colors.textSecondary,
-                marginTop: 16,
-                marginBottom: 8,
-              }}
-            >
-              No groups found
-            </Text>
-            <Text
-              style={{
-                fontFamily: "Inter_400Regular",
-                fontSize: 14,
-                color: colors.textTertiary,
-                textAlign: "center",
-                lineHeight: 20,
-              }}
-            >
-              Try adjusting your filters or create a new group to get started!
-            </Text>
-          </View>
-        )}
+                {/* Action Buttons */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 12,
+                  }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      backgroundColor: colors.primary,
+                      borderRadius: 12,
+                      paddingVertical: 12,
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <MessageCircle size={16} color="#FFFFFF" />
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      Chat
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: colors.surfaceElevated,
+                      borderRadius: 12,
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      alignItems: "center",
+                      flexDirection: "row",
+                      gap: 6,
+                    }}
+                  >
+                    <Eye size={16} color={colors.textSecondary} />
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: colors.text,
+                      }}
+                    >
+                      View
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedGroup(group);
+                      setShowWithdrawalModal(true);
+                    }}
+                    style={{
+                      backgroundColor: colors.error,
+                      borderRadius: 12,
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      alignItems: "center",
+                      flexDirection: "row",
+                      gap: 6,
+                    }}
+                  >
+                    <UserMinus size={16} color="#FFFFFF" />
+                    <Text
+                      style={{
+                        fontFamily: "Inter_600SemiBold",
+                        fontSize: 14,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      Leave
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Withdrawal Policy Info */}
+                <View
+                  style={{
+                    backgroundColor: colors.warning + "20",
+                    borderRadius: 8,
+                    padding: 12,
+                    marginTop: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Info size={16} color={colors.warning} />
+                  <Text
+                    style={{
+                      fontFamily: "Inter_400Regular",
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                      flex: 1,
+                    }}
+                  >
+                    {group.withdrawalPolicy}
+                  </Text>
+                </View>
+              </View>
+            ))}
+        </View>
       </ScrollView>
+
+      {renderWithdrawalModal()}
     </View>
   );
 }
+

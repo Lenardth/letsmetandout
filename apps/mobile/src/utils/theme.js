@@ -1,66 +1,76 @@
 import { useColorScheme } from 'react-native';
 
-// Color scheme based on platform documentation
+// Modern color palette with improved accessibility and visual hierarchy
 const lightTheme = {
-  // Base colors
-  background: '#FFFFFF',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F5F5F5',
+  // Core surfaces
+  background: '#F8F9FA',  // Soft off-white
+  surface: '#FFFFFF',     // Pure white cards/sheets
+  surfaceElevated: '#FFFFFF', // With elevation shadow instead of color
   surfaceCard: '#FFFFFF',
   
-  // Text colors
-  text: '#000000',
-  textSecondary: 'rgba(0,0,0,0.7)',
-  textTertiary: 'rgba(0,0,0,0.5)',
+  // Text hierarchy
+  text: '#1A1A1A',       // High-contrast charcoal
+  textSecondary: '#5A5A5A', // Medium contrast
+  textTertiary: '#9A9A9A',  // Low emphasis
   
-  // Brand colors (slightly desaturated for dark mode)
-  primary: '#FF408C',
-  primaryLight: '#FF4FA3',
-  accent: '#FF3775',
+  // Brand colors (vibrant but accessible)
+  primary: '#FF3A79',     // Modern pink-red
+  primaryLight: '#FF7BA4', // Softer highlight variant
+  accent: '#FF2E63',       // Deeper accent
   
-  // Semantic colors
-  success: '#4CAF50',
-  warning: '#FF9800',
-  danger: '#F44336',
-  info: '#2196F3',
+  // Semantic colors (updated for better WCAG compliance)
+  success: '#00C853',     // Vibrant success green
+  warning: '#FFAB00',     // Golden warning
+  danger: '#FF1744',      // Alert red
+  info: '#2979FF',        // Bright info blue
   
-  // Border and divider colors
-  border: '#E0E0E0',
-  divider: '#F0F0F0',
+  // Borders & dividers
+  border: '#E8E8E8',      // Very subtle borders
+  divider: '#F0F0F0',     // Section dividers
   
   // Status bar
-  statusBar: 'dark'
+  statusBar: 'dark',
+  
+  // New modern additions
+  backdrop: 'rgba(0,0,0,0.15)', // For overlays
+  shadow: '#000000',       // Base shadow color
+  icon: '#5A5A5A'         // Standard icon color
 };
 
 const darkTheme = {
-  // Base colors - starting with charcoal not pitch black
-  background: '#121212',
-  surface: '#1E1E1E',
-  surfaceElevated: '#262626',
+  // Deep surfaces (true black is harsh for dark mode)
+  background: '#121212',   // Near-black
+  surface: '#1E1E1E',      // Material dark surface
+  surfaceElevated: '#252525', // Elevated cards
   surfaceCard: '#1E1E1E',
   
-  // Text colors - off-white with controlled opacity
-  text: 'rgba(255,255,255,0.87)',
-  textSecondary: 'rgba(255,255,255,0.6)',
-  textTertiary: 'rgba(255,255,255,0.4)',
+  // Text (with opacity hierarchy)
+  text: 'rgba(255,255,255,0.92)', // High contrast
+  textSecondary: 'rgba(255,255,255,0.7)',
+  textTertiary: 'rgba(255,255,255,0.5)',
   
-  // Brand colors (slightly desaturated and brightened)
-  primary: '#FF5EA0',
-  primaryLight: '#FF6FB5',
-  accent: '#FF4A88',
+  // Brand colors (softer in dark mode)
+  primary: '#FF5B8D',      // Bright but not overwhelming
+  primaryLight: '#FF8CAD', // Light variant
+  accent: '#FF4777',       // Focus accent
   
-  // Semantic colors (brightened for dark background)
-  success: '#66BB6A',
-  warning: '#FFA726',
-  danger: '#EF5350',
-  info: '#42A5F5',
+  // Semantic colors (lighter for dark BG)
+  success: '#66FFA6',      // Bright success
+  warning: '#FFD54F',      // Soft gold
+  danger: '#FF616F',       // Coral danger
+  info: '#448AFF',         // Softer blue
   
-  // Border and divider colors
+  // Borders & dividers
   border: 'rgba(255,255,255,0.12)',
   divider: 'rgba(255,255,255,0.08)',
   
   // Status bar
-  statusBar: 'light'
+  statusBar: 'light',
+  
+  // New modern additions
+  backdrop: 'rgba(0,0,0,0.5)', // Darker overlays
+  shadow: '#000000',       // Stronger shadows
+  icon: 'rgba(255,255,255,0.7)' // Icon color
 };
 
 export function useTheme() {
@@ -69,8 +79,15 @@ export function useTheme() {
   
   return {
     colors: isDark ? darkTheme : lightTheme,
-    isDark
+    isDark,
+    // Add spacing/metrics here if needed
+    spacing: {
+      sm: 8,
+      md: 16,
+      lg: 24,
+      xl: 32
+    }
   };
 }
 
-export { lightTheme, darkTheme };
+export { darkTheme, lightTheme };
