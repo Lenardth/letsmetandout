@@ -15,14 +15,26 @@ jobs:
         node-version: [18.x, 20.x, 22.x]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json   # <-- adjust if yarn/pnpm
 
-    - name: Build
-      run: |
-        npm install
-        gulp
+      # Optional: quick sanity check so you can see the folder in logs
+      - name: Locate package.json
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 2 -name package.json -print
+
+      - name: Install dependencies
+        working-directory: ./frontend          # <-- change to your folder
+        run: npm ci
+
+      - name: Build with Gulp
+        working-directory: ./frontend          # <-- change to your folder
+        run: npx gulp
