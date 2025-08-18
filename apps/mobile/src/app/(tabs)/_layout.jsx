@@ -1,12 +1,5 @@
 import { Tabs } from "expo-router";
-import {
-  CalendarDays,
-  Compass, // For Wallet (better than CreditCard)
-  UserRound // For Profile (softer than User)
-  , // For Discover (more exploratory than Home)
-  Users2, // For Plans (more detailed than Calendar)
-  WalletCards
-} from "lucide-react-native";
+import { BookOpen, Calendar, Search, Store, User, UserPlus, Users, Wallet } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../utils/theme";
 
@@ -23,8 +16,6 @@ export default function TabLayout() {
           paddingBottom: insets.bottom + 8,
           paddingTop: 12,
           paddingHorizontal: 8,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
@@ -43,10 +34,12 @@ export default function TabLayout() {
         name="discover"
         options={{
           title: "Discover",
-          tabBarIcon: ({ color }) => (
-            <Compass 
-              color={color} 
+          tabBarIcon: ({ color, focused }) => (
+            <Search
+              color={color}
               size={24}
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
             />
           ),
         }}
@@ -55,10 +48,12 @@ export default function TabLayout() {
         name="groups"
         options={{
           title: "Groups",
-          tabBarIcon: ({ color }) => (
-            <Users2 
+          tabBarIcon: ({ color, focused }) => (
+            <Users 
               color={color} 
-              size={24}
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
             />
           ),
         }}
@@ -67,10 +62,40 @@ export default function TabLayout() {
         name="plans"
         options={{
           title: "Plans",
-          tabBarIcon: ({ color }) => (
-            <CalendarDays 
+          tabBarIcon: ({ color, focused }) => (
+            <Calendar 
               color={color} 
-              size={24}
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="bookings"
+        options={{
+          title: "Bookings",
+          tabBarIcon: ({ color, focused }) => (
+            <BookOpen 
+              color={color} 
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stores"
+        options={{
+          title: "Stores",
+          tabBarIcon: ({ color, focused }) => (
+            <Store 
+              color={color} 
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
             />
           ),
         }}
@@ -79,10 +104,26 @@ export default function TabLayout() {
         name="wallet"
         options={{
           title: "Wallet",
-          tabBarIcon: ({ color }) => (
-            <WalletCards 
+          tabBarIcon: ({ color, focused }) => (
+            <Wallet 
               color={color} 
-              size={24}
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="signup"
+        options={{
+          title: "Sign Up",
+          tabBarIcon: ({ color, focused }) => (
+            <UserPlus 
+              color={color} 
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
             />
           ),
         }}
@@ -91,10 +132,12 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <UserRound 
+          tabBarIcon: ({ color, focused }) => (
+            <User 
               color={color} 
-              size={24}
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
             />
           ),
         }}
