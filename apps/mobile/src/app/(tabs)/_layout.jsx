@@ -1,6 +1,12 @@
-// app/_layout.jsx
 import { Tabs } from "expo-router";
-import { BookOpen, Search, ShoppingBag, User, Users, Wallet } from "lucide-react-native";
+import {
+  CalendarDays,
+  Compass, // For Wallet (better than CreditCard)
+  UserRound // For Profile (softer than User)
+  , // For Discover (more exploratory than Home)
+  Users2, // For Plans (more detailed than Calendar)
+  WalletCards
+} from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../utils/theme";
 
@@ -17,6 +23,8 @@ export default function TabLayout() {
           paddingBottom: insets.bottom + 8,
           paddingTop: 12,
           paddingHorizontal: 8,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
@@ -35,11 +43,10 @@ export default function TabLayout() {
         name="discover"
         options={{
           title: "Discover",
-          tabBarIcon: ({ color, focused }) => (
-            <Search
-              color={color}
+          tabBarIcon: ({ color }) => (
+            <Compass 
+              color={color} 
               size={24}
-              fill={focused ? color : "transparent"}
             />
           ),
         }}
@@ -48,35 +55,48 @@ export default function TabLayout() {
         name="groups"
         options={{
           title: "Groups",
-          tabBarIcon: ({ color }) => <Users color={color} size={24} />,
+          tabBarIcon: ({ color }) => (
+            <Users2 
+              color={color} 
+              size={24}
+            />
+          ),
         }}
       />
       <Tabs.Screen
-        name="stores"
+        name="plans"
         options={{
-          title: "Stores",
-          tabBarIcon: ({ color }) => <ShoppingBag color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="bookings"
-        options={{
-          title: "Bookings",
-          tabBarIcon: ({ color }) => <BookOpen color={color} size={24} />,
+          title: "Plans",
+          tabBarIcon: ({ color }) => (
+            <CalendarDays 
+              color={color} 
+              size={24}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
           title: "Wallet",
-          tabBarIcon: ({ color }) => <Wallet color={color} size={24} />,
+          tabBarIcon: ({ color }) => (
+            <WalletCards 
+              color={color} 
+              size={24}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <User color={color} size={24} />,
+          tabBarIcon: ({ color }) => (
+            <UserRound 
+              color={color} 
+              size={24}
+            />
+          ),
         }}
       />
     </Tabs>
