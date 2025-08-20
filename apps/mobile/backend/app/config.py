@@ -1,13 +1,18 @@
+# app/config.py
 """
 Configuration settings for SafeMeet backend
 """
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv  # <--- 1. IMPORT THIS
 
+# This line explicitly finds and loads the .env file from your project's root directory
+load_dotenv() # <--- 2. ADD THIS LINE TO EXECUTE IT
 
 class Settings(BaseSettings):
     # Database
+    # This will now correctly read the value from the loaded .env file
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://localhost/safemeet_db")
     
     # Security
@@ -53,8 +58,14 @@ class Settings(BaseSettings):
         "https://your-frontend-domain.com"
     ]
     
+    # This is no longer strictly necessary but doesn't hurt to keep
     class Config:
         env_file = ".env"
 
+settings = Settings( )
 
-settings = Settings()
+# --- TEMPORARY DEBUG LINE ---
+# This will print the database URL to your console when the app starts.
+print("---" * 10)
+print(f"DEBUG: DATABASE_URL loaded as: {settings.DATABASE_URL}")
+print("---" * 10)

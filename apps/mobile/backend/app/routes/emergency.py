@@ -10,10 +10,9 @@ from app.utils.database import get_db
 from app.utils.security import get_current_verified_user, PermissionChecker
 from app.services.emergency import EmergencyService
 from app.schemas.safety import (
-    EmergencyAlertRequest, CheckInRequest, LocationShareRequest,
-    SafetyAlertResponse, SafetyAlertUpdate
+    EmergencyAlertCreate, SafetyCheckInCreate, LocationShareRequest,
+    EmergencyAlertResponse, SafetyAlertUpdate, NotifyEmergencyContactRequest
 )
-from app.schemas.emergency_contact import NotifyEmergencyContactRequest
 from app.models.user import User
 from app.models.safety_alert import SafetyAlert, AlertStatus
 
@@ -23,7 +22,7 @@ emergency_service = EmergencyService()
 
 @router.post("/alert", response_model=dict)
 async def create_emergency_alert(
-    alert_data: EmergencyAlertRequest,
+    alert_data: EmergencyAlertCreate,
     current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
@@ -68,7 +67,7 @@ async def create_emergency_alert(
 
 @router.post("/check-in", response_model=dict)
 async def create_check_in(
-    checkin_data: CheckInRequest,
+    checkin_data: SafetyCheckInCreate,
     current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
@@ -135,7 +134,7 @@ async def share_location(
         )
 
 
-@router.get("/alerts", response_model=List[SafetyAlertResponse])
+@router.get("/alerts", response_model=List[EmergencyAlertResponse])
 async def get_user_alerts(
     status_filter: Optional[AlertStatus] = None,
     limit: int = 50,
@@ -152,7 +151,7 @@ async def get_user_alerts(
     return alerts
 
 
-@router.get("/alerts/{alert_id}", response_model=SafetyAlertResponse)
+@router.get("/alerts/{alert_id}", response_model=EmergencyAlertResponse)
 async def get_alert_details(
     alert_id: int,
     current_user: User = Depends(get_current_verified_user),
@@ -173,7 +172,7 @@ async def get_alert_details(
     return alert
 
 
-@router.put("/alerts/{alert_id}", response_model=SafetyAlertResponse)
+@router.put("/alerts/{alert_id}", response_model=EmergencyAlertResponse)
 async def update_alert_status(
     alert_id: int,
     update_data: SafetyAlertUpdate,
