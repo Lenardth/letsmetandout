@@ -191,7 +191,7 @@ class VerificationService:
         
         doc.status = VerificationStatus.APPROVED
         doc.verified_at = datetime.utcnow()
-        doc.verified_by = admin_id
+        doc.verified_by_id = admin_id
         
         # Set expiry date (2 years for ID documents)
         if doc.document_type == DocumentType.ID_DOCUMENT:
@@ -226,7 +226,7 @@ class VerificationService:
         
         doc.status = VerificationStatus.REJECTED
         doc.verified_at = datetime.utcnow()
-        doc.verified_by = admin_id
+        doc.verified_by_id = admin_id
         doc.rejection_reason = reason
         doc.rejection_notes = notes
         

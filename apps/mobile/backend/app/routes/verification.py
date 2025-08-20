@@ -9,7 +9,7 @@ from app.utils.database import get_db
 from app.utils.security import get_current_active_user
 from app.services.verification import VerificationService
 from app.models.user import User
-from app.models.verification import DocumentType, VerificationDocument, BackgroundCheck
+from app.models.verification import DocumentType, VerificationDocument, BackgroundCheck, VerificationStatus
 
 router = APIRouter()
 verification_service = VerificationService()
@@ -25,7 +25,7 @@ async def upload_verification_document(
     """Upload verification document"""
     
     # Check if user can upload documents
-    from app.utils.security import PermissionChecker
+    from app.utils.permissions import PermissionChecker
     if not PermissionChecker.can_upload_documents(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -36,10 +36,10 @@ async def upload_verification_document(
     existing_doc = db.query(VerificationDocument).filter(
         VerificationDocument.user_id == current_user.id,
         VerificationDocument.document_type == document_type,
-        VerificationDocument.status.in_(["pending", "under_review", "approved"])
+        VerificationDocument.status.in_([VerificationStatus.PENDING, VerificationStatus.UNDER_REVIEW, VerificationStatus.APPROVED])
     ).first()
     
-    if existing_doc and existing_doc.status.value == "approved":
+    if existing_doc and existing_doc.status == VerificationStatus.APPROVED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{document_type.value.replace('_', ' ').title()} is already verified"
@@ -122,7 +122,7 @@ async def delete_document(
             detail="Document not found"
         )
     
-    if document.status.value == "approved":
+    if document.status == VerificationStatus.APPROVED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete approved documents"
@@ -183,11 +183,9 @@ async def get_background_checks(
                 "check_type": check.check_type,
                 "status": check.status.value,
                 "passed": check.passed,
-                "risk_level": check.risk_level,
                 "requested_at": check.requested_at,
                 "completed_at": check.completed_at,
                 "expires_at": check.expires_at,
-                "results_summary": check.results_summary if check.status.value == "approved" else None
             }
             for check in checks
         ]

@@ -54,7 +54,7 @@ class VerificationDocument(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     expires_at = Column(DateTime(timezone=True))  # When verification expires (e.g., for ID documents)
     
-    # Relationships
+    # Relationships - Explicitly specify foreign keys
     user = relationship("User", foreign_keys=[user_id], back_populates="verification_documents")
     verified_by_user = relationship("User", foreign_keys=[verified_by])
 
@@ -87,8 +87,8 @@ class BackgroundCheck(Base):
     completed_at = Column(DateTime(timezone=True))
     expires_at = Column(DateTime(timezone=True))
     
-    # Relationships
-    user = relationship("User")
+    # Relationships - Explicitly specify foreign key
+    user = relationship("User", foreign_keys=[user_id])
 
     def __repr__(self):
         return f"<BackgroundCheck(id={self.id}, user_id={self.user_id}, type='{self.check_type}', status='{self.status.value}')>"
