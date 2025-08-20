@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { BookOpen, Calendar, Search, Store, User, UserPlus, Users, Wallet } from "lucide-react-native";
+import { BookOpen, Calendar, LogIn, MapPin, Search, Store, TrendingUp, User, UserPlus, Users, Wallet } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../utils/theme";
 
@@ -31,11 +31,67 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
+        name="login"
+        options={{
+          title: "Login",
+          tabBarIcon: ({ color, focused }) => (
+            <LogIn
+              color={color}
+              size={24}
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="signup"
+        options={{
+          title: "Sign Up",
+          tabBarIcon: ({ color, focused }) => (
+            <UserPlus 
+              color={color} 
+              size={24} 
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="discover"
         options={{
           title: "Discover",
           tabBarIcon: ({ color, focused }) => (
             <Search
+              color={color}
+              size={24}
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="sa-attractions"
+        options={{
+          title: "SA Attractions",
+          tabBarIcon: ({ color, focused }) => (
+            <MapPin
+              color={color}
+              size={24}
+              strokeWidth={focused ? 2 : 1.5}
+              fill={focused ? "none" : "none"}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trends"
+        options={{
+          title: "Trends",
+          tabBarIcon: ({ color, focused }) => (
+            <TrendingUp
               color={color}
               size={24}
               strokeWidth={focused ? 2 : 1.5}
@@ -106,20 +162,6 @@ export default function TabLayout() {
           title: "Wallet",
           tabBarIcon: ({ color, focused }) => (
             <Wallet 
-              color={color} 
-              size={24} 
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="signup"
-        options={{
-          title: "Sign Up",
-          tabBarIcon: ({ color, focused }) => (
-            <UserPlus 
               color={color} 
               size={24} 
               strokeWidth={focused ? 2 : 1.5}

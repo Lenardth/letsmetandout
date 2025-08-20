@@ -1,152 +1,127 @@
+# app/schemas/safety.py
 """
-SafeMeet Application Schemas
+Safety schemas for SafeMeet application
 """
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, validator, Field
+from datetime import datetime, timedelta
 from typing import Optional, List
-from datetime import datetime, date
-from enum import Enum
-from app.models.safety_alert import AlertType, AlertStatus, AlertPriority
+from app.models.safety_alert import AlertStatus # Assuming AlertStatus is in this location
 
-# Enums for new schemas
-class UserRole(str, Enum):
-    USER = "user"
-    ADMIN = "admin"
-    SAFETY_RESPONDER = "safety_responder"
 
-class MeetupStatus(str, Enum):
-    SCHEDULED = "scheduled"
-    ONGOING = "ongoing"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+class SafetyPreferencesUpdate(BaseModel):
+    location_sharing: Optional[bool] = None
+    emergency_alerts: Optional[bool] = None
+    group_verification: Optional[bool] = None
+    background_check: Optional[bool] = None
+    auto_check_in: Optional[bool] = None
+    check_in_interval_minutes: Optional[int] = None
+    late_return_threshold_minutes: Optional[int] = None
 
-class VerificationStatus(str, Enum):
-    PENDING = "pending"
-    VERIFIED = "verified"
-    REJECTED = "rejected"
+    @validator('check_in_interval_minutes')
+    def validate_check_in_interval(cls, v):
+        if v is not None and (v < 5 or v > 480):  # 5 minutes to 8 hours
+            raise ValueError('Check-in interval must be between 5 and 480 minutes')
+        return v
 
-# User-related schemas
-class UserBase(BaseModel):
-    email: EmailStr
-    first_name: str = Field(..., min_length=1, max_length=50)
-    last_name: str = Field(..., min_length=1, max_length=50)
-    phone_number: Optional[str] = Field(None, pattern=r"^\+?[1-9]\d{1,14}$")
+    @validator('late_return_threshold_minutes')
+    def validate_late_return_threshold(cls, v):
+        if v is not None and (v < 5 or v > 120):  # 5 minutes to 2 hours
+            raise ValueError('Late return threshold must be between 5 and 120 minutes')
+        return v
 
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, max_length=100)
-    role: UserRole = UserRole.USER
+class SafetyCheckInCreate(BaseModel):
+    message: Optional[str] = None
+    latitude: float
+    longitude: float
+    expected_return_time: Optional[datetime] = Field(default_factory=lambda: datetime.utcnow() + timedelta(hours=1))
 
-class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    first_name: Optional[str] = Field(None, min_length=1, max_length=50)
-    last_name: Optional[str] = Field(None, min_length=1, max_length=50)
-    phone_number: Optional[str] = Field(None, pattern=r"^\+?[1-9]\d{1,14}$")
+    @validator('latitude')
+    def validate_latitude(cls, v):
+        if not -90 <= v <= 90:
+            raise ValueError('Latitude must be between -90 and 90')
+        return v
 
-class UserResponse(UserBase):
+    @validator('longitude')
+    def validate_longitude(cls, v):
+        if not -180 <= v <= 180:
+            raise ValueError('Longitude must be between -180 and 180')
+        return v
+
+class LocationShareRequest(BaseModel):
+    latitude: float
+    longitude: float
+    duration_minutes: int = 60
+    message: Optional[str] = "Sharing my location with you for safety."
+    share_with_contacts: bool = True
+
+    @validator('duration_minutes')
+    def validate_duration(cls, v):
+        if v < 5 or v > 480: # 5 minutes to 8 hours
+            raise ValueError("Duration must be between 5 and 480 minutes.")
+        return v
+
+class EmergencyAlertCreate(BaseModel):
+    message: str
+    latitude: float
+    longitude: float
+    notify_emergency_contacts: bool = True
+    contact_emergency_services: bool = False
+
+class SafetyAlertUpdate(BaseModel):
+    status: AlertStatus
+    response_notes: Optional[str] = None
+    police_notified: Optional[bool] = None
+    police_case_number: Optional[str] = None
+    emergency_services_contacted: Optional[bool] = None
+
+class NotifyEmergencyContactRequest(BaseModel):
+    contact_ids: List[int]
+    message: str = "This is an emergency alert. Please check on me."
+
+class EmergencyAlertResponse(BaseModel):
     id: int
-    role: UserRole
-    is_verified: bool
+    sender_id: int
+    status: str
+    message: Optional[str]
+    latitude: Optional[float]
+    longitude: Optional[float]
     created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-# Meetup-related schemas
-class MeetupBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=1000)
-    scheduled_start: datetime
-    scheduled_end: datetime
-    location_name: Optional[str] = Field(None, max_length=255)
-    location_address: Optional[str] = Field(None, max_length=500)
-    latitude: Optional[str] = None
-    longitude: Optional[str] = None
-
-class MeetupCreate(MeetupBase):
-    participant_ids: List[int] = []
-
-class MeetupUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=1000)
-    scheduled_start: Optional[datetime] = None
-    scheduled_end: Optional[datetime] = None
-    status: Optional[MeetupStatus] = None
-    location_name: Optional[str] = Field(None, max_length=255)
-    location_address: Optional[str] = Field(None, max_length=500)
-    latitude: Optional[str] = None
-    longitude: Optional[str] = None
-
-class MeetupResponse(MeetupBase):
-    id: int
-    creator_id: int
-    status: MeetupStatus
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    participants: List[UserResponse] = []
-
-    class Config:
-        from_attributes = True
-
-# Safety Contact schemas
-class SafetyContactBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
-    phone_number: str = Field(..., pattern=r"^\+?[1-9]\d{1,14}$")
-    relationship: str = Field(..., max_length=50)
-
-class SafetyContactCreate(SafetyContactBase):
-    pass
-
-class SafetyContactResponse(SafetyContactBase):
-    id: int
-    user_id: int
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# Verification schemas
-class VerificationRequest(BaseModel):
-    document_type: str = Field(..., max_length=50)
-    document_number: str = Field(..., max_length=100)
-    document_image_url: str = Field(..., max_length=500)
-
-class VerificationResponse(BaseModel):
-    id: int
-    user_id: int
-    status: VerificationStatus
-    submitted_at: datetime
-    processed_at: Optional[datetime] = None
-    notes: Optional[str] = Field(None, max_length=1000)
-
-    class Config:
-        from_attributes = True
-
-# Extended Safety Preferences Response
-class SafetyPreferencesResponse(BaseModel):
-    user_id: int
-    location_sharing: bool
-    emergency_alerts: bool
-    group_verification: bool
-    background_check: bool
-    auto_check_in: bool
-    check_in_interval_minutes: Optional[int] = Field(None, ge=15, le=180)
-    late_return_threshold_minutes: Optional[int] = Field(None, ge=15, le=240)
     updated_at: datetime
 
     class Config:
         from_attributes = True
 
-# Notification schemas
-class NotificationBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
-    message: str = Field(..., max_length=1000)
-    is_read: bool = False
+class EmergencyContactCreate(BaseModel):
+    contact_name: str
+    contact_phone: str
+    contact_email: Optional[str] = None
+    relationship_type: str
+    is_primary: bool = False
 
-class NotificationResponse(NotificationBase):
+    @validator('contact_phone')
+    def validate_phone(cls, v):
+        if not v.replace('+', '').replace(' ', '').replace('-', '').isdigit():
+            raise ValueError('Phone number must contain only digits, spaces, dashes, and plus sign')
+        return v
+
+    @validator('relationship_type')
+    def validate_relationship_type(cls, v):
+        valid_types = ['family', 'friend', 'colleague', 'partner', 'other']
+        if v.lower() not in valid_types:
+            raise ValueError(f'Relationship type must be one of: {", ".join(valid_types)}')
+        return v.lower()
+
+class EmergencyContactResponse(BaseModel):
     id: int
     user_id: int
+    contact_name: str
+    contact_phone: str
+    contact_email: Optional[str]
+    relationship_type: str
+    is_primary: bool
+    is_active: bool
     created_at: datetime
-    read_at: Optional[datetime] = None
+    updated_at: datetime
 
     class Config:
         from_attributes = True
