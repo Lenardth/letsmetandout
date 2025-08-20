@@ -32,7 +32,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     Register a new user. Returns the created user (public-safe fields only).
     """
     user = create_user(db, payload)
-    return user  # Pydantic model will shape it according to UserResponse
+    return user
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
