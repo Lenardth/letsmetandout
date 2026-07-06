@@ -13,7 +13,7 @@ load_dotenv() # <--- 2. ADD THIS LINE TO EXECUTE IT
 class Settings(BaseSettings):
     # Database
     # This will now correctly read the value from the loaded .env file
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://localhost/safemeet_db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./safemeet.db")
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
@@ -62,10 +62,4 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
-settings = Settings( )
-
-# --- TEMPORARY DEBUG LINE ---
-# This will print the database URL to your console when the app starts.
-print("---" * 10)
-print(f"DEBUG: DATABASE_URL loaded as: {settings.DATABASE_URL}")
-print("---" * 10)
+settings = Settings()

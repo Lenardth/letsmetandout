@@ -5,6 +5,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
   AlertTriangle,
@@ -32,7 +33,6 @@ import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -40,6 +40,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,10 +50,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import apiClient from "../../utils/api"; // Your axios client configured with the backend URL
 import { useTheme } from "../../utils/theme"; // Your custom theme hook
 
-const { width: screenWidth } = Dimensions.get("window");
-
-export default function SignupScreen({ navigation }) { // Assuming you use react-navigation
+export default function SignupScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const { colors, isDark } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -153,15 +154,24 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
       first_name: formData.firstName,
       last_name: formData.lastName,
       email: formData.email,
-      phone_number: formData.phone,
+      phone: formData.phone,
       password: formData.password,
+      address: formData.address,
+      city: formData.city,
+      province: formData.province,
+      id_number: formData.idNumber,
+      interests: formData.interests,
+      safety_preferences: formData.safetyPreferences,
+      terms_accepted: formData.termsAccepted,
+      privacy_accepted: formData.privacyAccepted,
+      safety_guidelines_accepted: formData.safetyGuidelinesAccepted,
     };
     try {
       const response = await apiClient.post('/auth/register', userData);
       Alert.alert(
         "Account Created!", 
         response.data.message || "Please check your email to verify your account.",
-        [{ text: "Go to Login", onPress: () => navigation.navigate('Login') }]
+        [{ text: "Explore", onPress: () => router.replace('/(tabs)/discover') }]
       );
     } catch (error) {
       const errorMessage = error.response?.data?.detail || "An unexpected error occurred.";
@@ -206,11 +216,18 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
       marginBottom: 30 
     }}>
       {steps.map((step, index) => (
-        <View key={step.id} style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          key={step.id}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            flexShrink: index < steps.length - 1 ? 1 : 0,
+          }}
+        >
           <View style={{ 
-            width: 40, 
-            height: 40, 
-            borderRadius: 20, 
+            width: screenWidth < 360 ? 34 : 40,
+            height: screenWidth < 360 ? 34 : 40,
+            borderRadius: screenWidth < 360 ? 17 : 20,
             backgroundColor: index <= currentStep ? colors.primary : colors.surfaceElevated, 
             justifyContent: "center", 
             alignItems: "center" 
@@ -223,10 +240,10 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
           </View>
           {index < steps.length - 1 && (
             <View style={{ 
-              width: 30, 
+              width: Math.max(14, Math.min(30, (screenWidth - 252) / 4)),
               height: 2, 
               backgroundColor: index < currentStep ? colors.primary : colors.border, 
-              marginHorizontal: 8 
+              marginHorizontal: screenWidth < 360 ? 4 : 8
             }} />
           )}
         </View>
@@ -366,7 +383,7 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
         
         {/* Login Link */}
         <TouchableOpacity 
-          onPress={() => navigation.navigate('Login')} 
+          onPress={() => router.replace('/(tabs)/discover')}
           style={{ marginTop: 16, paddingBottom: 10 }}
         >
           <Text style={{ 
@@ -380,7 +397,7 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
               color: colors.primary, 
               fontFamily: "Inter_700Bold" 
             }}>
-              Sign In
+              Explore
             </Text>
           </Text>
         </TouchableOpacity>
@@ -645,7 +662,7 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
               <Text style={{ 
                 fontFamily: "Inter_400Regular", 
                 fontSize: 12, 
-                color: colors.error, 
+                color: colors.danger,
                 marginTop: 4 
               }}>
                 Passwords do not match
@@ -1016,8 +1033,7 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
             {/* ID Document Upload */}
             <TouchableOpacity 
               onPress={() => {
-                Alert.alert("Upload ID Document", "This feature will be implemented with camera/gallery access.");
-                updateFormData("idDocument", "mock_id_document.jpg");
+                Alert.alert("Upload not connected", "Connect the real upload endpoint before marking an ID document as uploaded.");
               }}
               style={{ 
                 backgroundColor: colors.surfaceElevated, 
@@ -1055,8 +1071,7 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
             {/* Proof of Address Upload */}
             <TouchableOpacity 
               onPress={() => {
-                Alert.alert("Upload Proof of Address", "This feature will be implemented with camera/gallery access.");
-                updateFormData("proofOfAddress", "mock_proof_address.jpg");
+                Alert.alert("Upload not connected", "Connect the real upload endpoint before marking proof of address as uploaded.");
               }}
               style={{ 
                 backgroundColor: colors.surfaceElevated, 
@@ -1094,8 +1109,7 @@ export default function SignupScreen({ navigation }) { // Assuming you use react
             {/* Selfie Photo */}
             <TouchableOpacity 
               onPress={() => {
-                Alert.alert("Take Selfie Photo", "This feature will be implemented with camera access.");
-                updateFormData("selfiePhoto", "mock_selfie.jpg");
+                Alert.alert("Camera not connected", "Connect the real camera/upload flow before marking a selfie as uploaded.");
               }}
               style={{ 
                 backgroundColor: colors.surfaceElevated, 

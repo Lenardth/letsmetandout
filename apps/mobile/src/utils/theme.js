@@ -22,6 +22,7 @@ const lightTheme = {
   success: '#00C853',     // Vibrant success green
   warning: '#FFAB00',     // Golden warning
   danger: '#FF1744',      // Alert red
+  error: '#FF1744',       // Backward-compatible alert alias
   info: '#2979FF',        // Bright info blue
   
   // Borders & dividers
@@ -58,6 +59,7 @@ const darkTheme = {
   success: '#66FFA6',      // Bright success
   warning: '#FFD54F',      // Soft gold
   danger: '#FF616F',       // Coral danger
+  error: '#FF616F',        // Backward-compatible alert alias
   info: '#448AFF',         // Softer blue
   
   // Borders & dividers

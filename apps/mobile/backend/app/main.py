@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.utils.database import engine, Base
-from app.routes import auth, users, verification, emergency, safety
+from app.routes import auth, data, users, verification, emergency, safety
 
 
 @asynccontextmanager
@@ -54,6 +54,7 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(verification.router, prefix="/api/v1/verification", tags=["Verification"])
 app.include_router(emergency.router, prefix="/api/v1/emergency", tags=["Emergency"])
 app.include_router(safety.router, prefix="/api/v1/safety", tags=["Safety"])
+app.include_router(data.router, prefix="/api/v1", tags=["Data"])
 
 
 @app.get("/")

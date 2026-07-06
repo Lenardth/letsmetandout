@@ -9,7 +9,7 @@ from app.utils.security import get_current_user, verify_token as verify_jwt
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth import create_user, login_and_issue_token
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 # ---------- Schemas ----------
 

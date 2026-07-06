@@ -2,7 +2,6 @@
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 import { Alert, Linking } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
 
 // Emergency contacts database
 export const EMERGENCY_SERVICES = {
@@ -82,15 +81,4 @@ export const scheduleSafetyCheck = (duration, callback) => {
       { cancelable: false }
     );
   }, duration * 60 * 1000);
-};
-
-// Fake call feature
-export const initiateFakeCall = () => {
-  const callTime = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes from now
-  return {
-    id: uuidv4(),
-    name: "Fake Call",
-    time: callTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    number: "083" + Math.floor(1000000 + Math.random() * 9000000)
-  };
 };

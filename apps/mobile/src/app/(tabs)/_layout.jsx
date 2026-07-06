@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { BookOpen, Calendar, LogIn, MapPin, Search, Store, TrendingUp, User, UserPlus, Users, Wallet } from "lucide-react-native";
+import { Calendar, Search, User, UserPlus, Users, Wallet } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../utils/theme";
 
@@ -13,8 +13,11 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          paddingBottom: insets.bottom + 8,
-          paddingTop: 12,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
+          paddingTop: 8,
           paddingHorizontal: 8,
         },
         tabBarActiveTintColor: colors.primary,
@@ -22,32 +25,19 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: "Inter_600SemiBold",
-          marginTop: 4,
+          marginTop: 2,
         },
         tabBarItemStyle: {
-          paddingVertical: 8,
+          paddingVertical: 4,
           flex: 1,
         },
       }}
     >
       <Tabs.Screen
-        name="login"
-        options={{
-          title: "Login",
-          tabBarIcon: ({ color, focused }) => (
-            <LogIn
-              color={color}
-              size={24}
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="signup"
         options={{
           title: "Sign Up",
+          href: null,
           tabBarIcon: ({ color, focused }) => (
             <UserPlus 
               color={color} 
@@ -64,34 +54,6 @@ export default function TabLayout() {
           title: "Discover",
           tabBarIcon: ({ color, focused }) => (
             <Search
-              color={color}
-              size={24}
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="sa-attractions"
-        options={{
-          title: "SA Attractions",
-          tabBarIcon: ({ color, focused }) => (
-            <MapPin
-              color={color}
-              size={24}
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="trends"
-        options={{
-          title: "Trends",
-          tabBarIcon: ({ color, focused }) => (
-            <TrendingUp
               color={color}
               size={24}
               strokeWidth={focused ? 2 : 1.5}
@@ -132,28 +94,14 @@ export default function TabLayout() {
         name="bookings"
         options={{
           title: "Bookings",
-          tabBarIcon: ({ color, focused }) => (
-            <BookOpen 
-              color={color} 
-              size={24} 
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
         name="stores"
         options={{
           title: "Stores",
-          tabBarIcon: ({ color, focused }) => (
-            <Store 
-              color={color} 
-              size={24} 
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
