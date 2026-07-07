@@ -3,6 +3,11 @@
 	"main": "index",
 	"version": "1.0.0",
 	"scripts": {
+		"api": "cd backend && PYTHONPATH=. python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
+		"dev": "npx expo start --lan",
+		"dev:local": "npx expo start --localhost",
+		"dev:tunnel": "npx expo start --tunnel",
+		"typecheck": "tsc --noEmit",
 		"postinstall": "patch-package"
 	},
 	"dependencies": {
