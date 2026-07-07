@@ -1,11 +1,11 @@
-import type { Contact, ContactQuery } from 'expo-contacts';
+import type { Contact, ContactQuery, ExistingContact } from 'expo-contacts';
 import { Fields, SortTypes } from 'expo-contacts/src/Contacts';
-import { PermissionStatus } from 'expo-modules-core/src/PermissionsInterface';
+import { PermissionStatus } from 'expo-modules-core';
 import Alert from './alerts.web';
 
 export { PermissionStatus, Fields, SortTypes };
 
-const fakeContacts: Contact[] = [
+const fakeContacts: ExistingContact[] = [
   {
     id: '1',
     contactType: 'person',
@@ -195,7 +195,7 @@ export const getContactByIdAsync = async (id: string, options: ContactQuery = {}
 };
 
 export const addContactAsync = async (contact: Contact) => {
-  const newContact: Contact = {
+  const newContact: ExistingContact = {
     id: Date.now().toString(),
     contactType: contact.contactType || 'person',
     name: contact.name || '',
@@ -234,7 +234,7 @@ export const addContactAsync = async (contact: Contact) => {
   return newContact.id;
 };
 
-export const updateContactAsync = async (contact: Contact) => {
+export const updateContactAsync = async (contact: ExistingContact) => {
   const index = fakeContacts.findIndex((c) => c.id === contact.id);
   if (index === -1) {
     throw new Error(`Contact with id ${contact.id} not found`);

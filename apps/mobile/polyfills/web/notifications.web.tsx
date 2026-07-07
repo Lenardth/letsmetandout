@@ -3,7 +3,7 @@ import type {
   PermissionResponse,
 } from 'expo-notifications/src/Notifications.types';
 import type { NotificationHandler } from 'expo-notifications/src/NotificationsHandler';
-import { PermissionStatus } from 'expo-modules-core/src/PermissionsInterface';
+import { PermissionStatus } from 'expo-modules-core';
 import { toast } from 'sonner-native';
 
 const scheduledNotifications = new Map<
