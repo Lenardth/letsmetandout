@@ -8,6 +8,11 @@ import {
 	TouchableOpacity,
 	TextInput,
 } from 'react-native';
+import type { ViewStyle } from 'react-native';
+
+type WebViewStyle = ViewStyle & {
+	backdropFilter?: string;
+};
 
 type AlertButton = {
 	text: string;
@@ -441,7 +446,7 @@ const styling = (userInterfaceStyle: string) =>
 			backdropFilter: 'blur(20px)',
 			borderRadius: 12,
 			width: 244,
-		},
+		} as WebViewStyle,
 		contentContainer: {
 			paddingVertical: 20,
 			paddingHorizontal: 12,
