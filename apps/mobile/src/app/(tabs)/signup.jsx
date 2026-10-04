@@ -33,6 +33,7 @@ import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -410,6 +411,20 @@ export default function SignupScreen() {
   function renderBasicInfo() {
     return (
       <View style={{ paddingHorizontal: 20 }}>
+        <Image
+          source={require("../../../assets/branding/safemeet-logo-v1.png")}
+          accessibilityLabel="SafeMeet logo"
+          accessible
+          resizeMode="contain"
+          style={{
+            width: 240,
+            height: 160,
+            alignSelf: "center",
+            marginBottom: 16,
+            backgroundColor: "#FFFFFF",
+            borderRadius: 20,
+          }}
+        />
         <Text style={{ 
           fontFamily: "Inter_700Bold", 
           fontSize: 28, 

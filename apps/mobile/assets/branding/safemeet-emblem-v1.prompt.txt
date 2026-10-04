@@ -1,0 +1,5 @@
+Generated with the built-in imagegen tool using safemeet-logo-v1.png as reference.
+
+Edit this SafeMeet logo into a production mobile app icon asset. Preserve the exact recognizable pink two-person heart emblem. Remove the SafeMeet wordmark completely. Remove all glow, shadows and haze. Crisp flat pink emblem on genuinely transparent background, no black background. Center emblem inside a square canvas with generous 20 percent margins on all sides for adaptive icon safe area. No text. Keep original emblem geometry and pink color.
+
+Expo image-utils produced 1024px icon and adaptive assets and a 64px favicon; the icon and favicon use white backgrounds.
