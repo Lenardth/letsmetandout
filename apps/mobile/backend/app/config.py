@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list = [
         "http://localhost:3000",
         "http://localhost:8080",
+        "http://localhost:8081",
+        "http://localhost:8082",
         "http://localhost:19006",  # Expo
         "https://your-frontend-domain.com"
     ]

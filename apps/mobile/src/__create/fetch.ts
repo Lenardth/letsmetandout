@@ -1,10 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import { fetch as expoFetch } from 'expo/fetch';
 
-const originalFetch = fetch;
 const authKey = `${process.env.EXPO_PUBLIC_PROJECT_GROUP_ID}-jwt`;
 
-const getURLFromArgs = (...args: Parameters<typeof fetch>) => {
+const getURLFromArgs = (...args: Parameters<typeof expoFetch>) => {
   const [urlArg] = args;
   let url: string | null;
   if (typeof urlArg === 'string') {
@@ -54,7 +53,7 @@ const fetchToWeb = async function fetchWithHeaders(...args: Params) {
   if (typeof input === 'string') {
     finalInput = input.startsWith('/') ? `${baseURL}${input}` : input;
   } else {
-    return originalFetch(input, init);
+    return expoFetch(input, init);
   }
 
   const initHeaders = init?.headers ?? {};

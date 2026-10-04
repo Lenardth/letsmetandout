@@ -75,9 +75,8 @@ class User(Base):
     
     # Relationships
     emergency_contacts = relationship("EmergencyContact", back_populates="user", cascade="all, delete-orphan")
-    verification_documents = relationship("VerificationDocument", back_populates="user", cascade="all, delete-orphan")
-    sent_alerts = relationship("SafetyAlert", foreign_keys="SafetyAlert.sender_id", back_populates="sender")
-    received_alerts = relationship("SafetyAlert", foreign_keys="SafetyAlert.recipient_id", back_populates="recipient")
+    verification_documents = relationship("VerificationDocument", foreign_keys="VerificationDocument.user_id", back_populates="user", cascade="all, delete-orphan")
+    safety_alerts = relationship("SafetyAlert", back_populates="user")
 
     # Safety relationships
     safety_check_ins = relationship("SafetyCheckIn", back_populates="user")

@@ -1,68 +1,82 @@
 {
-	"expo": {
-    "name": "Create mobile app",
-		"version": "1.0.0",
-		"orientation": "portrait",
-		"icon": "./assets/images/icon.png",
-		"userInterfaceStyle": "automatic",
-		"newArchEnabled": true,
-		"ios": {
-			"supportsTablet": true,
-			"infoPlist": {
-				"ITSAppUsesNonExemptEncryption": false
-			}
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/images/adaptive-icon.png",
-				"backgroundColor": "#ffffff"
-			},
-			"permissions": [
-				"android.permission.RECORD_AUDIO",
-				"android.permission.MODIFY_AUDIO_SETTINGS"
-			],
-			"package": "xyz.create.CreateExpoEnvironment"
-		},
-		"plugins": [
-			[
-				"expo-router",
-				{
-					"sitemap": false
-				}
-			],
-			[
-				"expo-splash-screen",
-				{
-					"image": "./assets/images/splash-icon.png",
-					"imageWidth": 200,
-					"resizeMode": "contain"
-				}
-			],
-			"expo-audio",
-			[
-				"expo-build-properties",
-				{
-					"ios": {
-						"useFrameworks": "static"
-					}
-				}
-			],
-			"expo-video"
-		],
-		"web": {
-			"bundler": "metro",
-			"favicon": "./assets/images/favicon.png"
-		},
-		"experiments": {
-			"typedRoutes": true
-		},
-		"extra": {
-			"router": {
-				"origin": false
-			}
-		},
-		"runtimeVersion": {
-			"policy": "appVersion"
-		}
-	}
+  "expo": {
+    "name": "SafeMeet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ],
+      "package": "xyz.create.CreateExpoEnvironment"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "sitemap": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-audio",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "expo-video"
+    ],
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false,
+        "sitemap": false
+      },
+      "eas": {
+        "projectId": "4ccf17f4-12ca-4b4c-8888-228e8d9900ac"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "slug": "safemeet-mobile",
+    "owner": "tivanan_ilenard",
+    "updates": {
+      "url": "https://u.expo.dev/4ccf17f4-12ca-4b4c-8888-228e8d9900ac"
+    }
+  }
 }

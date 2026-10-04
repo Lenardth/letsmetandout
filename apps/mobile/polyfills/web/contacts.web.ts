@@ -1,5 +1,5 @@
-import type { Contact, ContactQuery, ExistingContact } from 'expo-contacts';
-import { Fields, SortTypes } from 'expo-contacts/src/Contacts';
+import type { Contact, ContactQuery, ExistingContact } from 'expo-contacts/legacy';
+import { Fields, SortTypes } from 'expo-contacts/legacy';
 import { PermissionStatus } from 'expo-modules-core';
 import Alert from './alerts.web';
 

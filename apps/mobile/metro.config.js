@@ -95,10 +95,11 @@ config.cacheStores = () => [
 ];
 config.resetCache = false;
 config.fileMapCacheDirectory = cacheDir;
+const defaultReporter = config.reporter;
 config.reporter = {
-  ...config.reporter,
+  ...defaultReporter,
   update: (event) => {
-    config.reporter?.update(event);
+    defaultReporter?.update(event);
     const reportableErrors = [
       'error',
       'bundling_error',

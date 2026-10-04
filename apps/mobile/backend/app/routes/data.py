@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import inspect, select, text
@@ -38,7 +38,7 @@ def rows_from_table(db: Session, table_name: str, limit: int = 50):
 @router.get("/discover/users")
 def discover_users(
     db: Session = Depends(get_db),
-    current_user_id: int | None = Query(default=None),
+    current_user_id: Optional[int] = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
 ):
     query = select(User).where(User.status != UserStatus.DEACTIVATED).limit(limit)
@@ -89,7 +89,7 @@ def list_stores(db: Session = Depends(get_db), limit: int = Query(default=50, ge
 
 
 @router.get("/wallet/summary")
-def wallet_summary(user_id: int | None = None, db: Session = Depends(get_db)):
+def wallet_summary(user_id: Optional[int] = None, db: Session = Depends(get_db)):
     transactions = []
     balance = 0
 
