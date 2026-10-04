@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.utils.database import get_db
-from app.utils.security import get_current_user, verify_token as verify_jwt
+from app.utils.security import get_current_active_user, verify_token as verify_jwt
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth import create_user, login_and_issue_token
 
@@ -43,7 +43,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=token)
 
 @router.get("/me", response_model=UserResponse)
-def me(current_user=Depends(get_current_user)):
+def me(current_user=Depends(get_current_active_user)):
     """
     Get the current authenticated user's profile using Bearer token.
     """

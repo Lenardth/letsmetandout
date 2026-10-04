@@ -7,9 +7,11 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/DataState
 import { useAuth } from "../../utils/auth/useAuth";
 import { useTheme } from "../../utils/theme";
 import { useApiResource } from "../../utils/useApiResource";
+import { useRouter } from "expo-router";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { colors } = useTheme();
   const { auth, signOut } = useAuth();
   const { data, loading, error, refetch } = useApiResource("/auth/me", { initialData: null });
@@ -115,6 +117,9 @@ export default function ProfileScreen() {
                 </View>
               ))}
 
+            <TouchableOpacity onPress={() => router.push('/complete-profile')} accessibilityRole="button">
+              <Text style={{ color: colors.primary, paddingVertical: 12 }}>Edit profile</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={signOut}
               style={{

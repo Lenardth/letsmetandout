@@ -9,7 +9,7 @@ export default function StoresScreen() {
       emptyTitle="No stores yet"
       emptyMessage="Add store records to the backend and they will be shown here."
       titleFields={["name", "title", "business_name", "id"]}
-      detailFields={["category", "location", "address", "phone", "status"]}
+      detailFields={["category", "location", "address", "phone", "status", "source"]}
     />
   );
 }

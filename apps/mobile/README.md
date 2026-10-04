@@ -70,4 +70,9 @@ npm run typecheck  # TypeScript check
   signing up creates users that appear on Discover. To use an existing database, set
   `DATABASE_URL` in `backend/.env` before starting the API.
 - Generated files such as `.DS_Store` and Metro file maps should stay out of commits.
-- The existing web polyfills currently block a clean `npm run typecheck`; fix those before treating typecheck as a required gate.
+
+## Real accounts
+
+The app requires signup or login before accessing tabs. Signup creates a persisted profile and signs the user in. Start the API with `npm run api` and set `EXPO_PUBLIC_API_URL` to its reachable address. Supabase credentials have not been provided; accounts currently use FastAPI and its configured database. Native branding changes require a rebuild.
+
+Account checks: `backend/.venv/bin/python -m unittest discover -s backend/tests -v` (run from `mobile`). The test starts a temporary local API and database; it does not change real users.

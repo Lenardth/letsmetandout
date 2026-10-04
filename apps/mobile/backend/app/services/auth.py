@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.user import User
+from app.models.user import UserStatus
+from sqlalchemy.exc import IntegrityError
 from app.schemas.user import UserCreate
 from app.utils.security import (
     get_password_hash,
@@ -67,7 +69,8 @@ def create_user(db: Session, payload: UserCreate) -> User:
     # If your model stores interests in a text column; adjust if JSON
     interests = getattr(payload, "interests", None)
     if interests is not None and hasattr(User, "interests"):
-        user_kwargs["interests"] = ",".join(interests) if isinstance(interests, list) else str(interests)
+        user_kwargs["interests"] = interests
+    user_kwargs["safety_preferences"] = payload.safety_preferences
 
     # Policy flags if present
     for flag in ("terms_accepted", "privacy_accepted", "safety_guidelines_accepted"):
@@ -76,7 +79,11 @@ def create_user(db: Session, payload: UserCreate) -> User:
 
     user = User(**user_kwargs)
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email or phone already registered")
     db.refresh(user)
     return user
 
@@ -87,6 +94,8 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     if not user:
         return None
     if not verify_password(password, user.password_hash):
+        return None
+    if user.status in (UserStatus.SUSPENDED, UserStatus.DEACTIVATED):
         return None
     return user
 

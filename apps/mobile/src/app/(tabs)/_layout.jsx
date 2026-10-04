@@ -34,21 +34,6 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="signup"
-        options={{
-          title: "Sign Up",
-          href: null,
-          tabBarIcon: ({ color, focused }) => (
-            <UserPlus 
-              color={color} 
-              size={24} 
-              strokeWidth={focused ? 2 : 1.5}
-              fill={focused ? "none" : "none"}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="discover"
         options={{
           title: "Discover",

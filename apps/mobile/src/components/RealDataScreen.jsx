@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RefreshCw } from "lucide-react-native";
 
@@ -35,7 +36,12 @@ export default function RealDataScreen({
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { data, loading, error, refetch } = useApiResource(endpoint, { initialData: [] });
-  const items = Array.isArray(transform(data)) ? transform(data) : [];
+  const [search, setSearch] = useState("");
+  const transformed = transform(data);
+  const items = (Array.isArray(transformed) ? transformed : []).filter((item) =>
+    [getTitle(item, titleFields), item.location, item.bio, item.activity, ...(item.interests || [])]
+      .filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase())
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -77,10 +83,18 @@ export default function RealDataScreen({
           </View>
         </View>
 
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder={`Search ${title.toLowerCase()} or city`}
+          placeholderTextColor={colors.textTertiary}
+          accessibilityLabel={`Search ${title}`}
+          style={{ padding: 14, backgroundColor: colors.surface, color: colors.text, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
+        />
         {loading && <LoadingState />}
         {!loading && error && <ErrorState message={error} onRetry={refetch} />}
         {!loading && !error && items.length === 0 && (
-          <EmptyState title={emptyTitle} message={emptyMessage} />
+          <EmptyState title={search ? "No matches" : emptyTitle} message={search ? "Try another name, city or interest." : emptyMessage} />
         )}
 
         {!loading &&
@@ -97,10 +111,25 @@ export default function RealDataScreen({
                 gap: 10,
               }}
             >
+              {item.image && (
+                <Image
+                  source={{ uri: item.image }}
+                  accessibilityLabel={item.imageDescription || getTitle(item, titleFields)}
+                  resizeMode="cover"
+                  style={{ width: "100%", height: 190, borderRadius: 10, backgroundColor: colors.border }}
+                />
+              )}
               <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 18 }}>
                 {getTitle(item, titleFields)}
               </Text>
+              {item.imageCredit && <Text style={{ color: colors.textTertiary, fontSize: 11 }}>{item.imageCredit}</Text>}
+              {item.interests && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {item.interests.map((interest) => <Text key={interest} style={{ color: colors.primary, backgroundColor: colors.surfaceElevated, padding: 8, borderRadius: 12 }}>{interest}</Text>)}
+                </View>
+              )}
               {detailFields
+                .filter((field) => field !== "interests" && field !== "source")
                 .map((field) => [field, valueToText(item[field])])
                 .filter(([, value]) => value)
                 .map(([field, value]) => (
@@ -120,6 +149,13 @@ export default function RealDataScreen({
                     </Text>
                   </View>
                 ))}
+              {item.members && <Text style={{ color: colors.textSecondary }}>{item.members} members</Text>}
+              {item.duration && <Text style={{ color: colors.textSecondary }}>Duration: {item.duration}</Text>}
+              {item.source?.startsWith("https://") && (
+                <TouchableOpacity accessibilityRole="link" onPress={() => Linking.openURL(item.source).catch(() => {})}>
+                  <Text style={{ color: colors.primary, fontWeight: "600", paddingVertical: 8 }}>Visit official website ↗</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
       </ScrollView>

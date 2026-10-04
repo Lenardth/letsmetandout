@@ -1,8 +1,6 @@
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useMemo } from 'react';
-import { create } from 'zustand';
-import { Modal, View } from 'react-native';
+import { useCallback, useEffect } from 'react';
 import { useAuthModal, useAuthStore, authKey } from './store';
 import apiClient from '../api';
 
@@ -15,31 +13,39 @@ import apiClient from '../api';
  */
 export const useAuth = () => {
   const { isReady, auth, setAuth } = useAuthStore();
-  const { isOpen, close, open } = useAuthModal();
+  const { close } = useAuthModal();
 
   const initiate = useCallback(() => {
-    SecureStore.getItemAsync(authKey).then((auth) => {
-      useAuthStore.setState({
-        auth: auth ? JSON.parse(auth) : null,
-        isReady: true,
-      });
-    });
+    (async () => {
+      try {
+        const saved = await SecureStore.getItemAsync(authKey);
+        const session = saved ? JSON.parse(saved) : null;
+        if (!session?.access_token) return;
+        useAuthStore.setState({ auth: session });
+        const { data: profile } = await apiClient.get('/auth/me');
+        useAuthStore.setState({ auth: { ...session, profile } });
+      } catch {
+        useAuthStore.getState().setAuth(null);
+      } finally {
+        useAuthStore.setState({ isReady: true });
+      }
+    })();
   }, []);
 
-  useEffect(() => {}, []);
-
   const signIn = useCallback(() => {
-    open({ mode: 'signin' });
-  }, [open]);
+    router.push('/login');
+  }, []);
   const signUp = useCallback(() => {
-    open({ mode: 'signup' });
-  }, [open]);
+    router.push('/signup');
+  }, []);
 
   const login = useCallback(async (email, password) => {
     try {
       const { data } = await apiClient.post('/auth/login', { email, password });
-      setAuth(data);
-      return { success: true, data };
+      const response = await apiClient.get('/auth/me', { headers: { Authorization: `Bearer ${data.access_token}` } });
+      const session = { ...data, profile: response.data };
+      setAuth(session);
+      return { success: true, data: session };
     } catch (error) {
       return {
         success: false,
@@ -51,7 +57,7 @@ export const useAuth = () => {
   const signOut = useCallback(() => {
     setAuth(null);
     close();
-  }, [close]);
+  }, [close, setAuth]);
 
   return {
     isReady,
@@ -71,13 +77,11 @@ export const useAuth = () => {
  */
 export const useRequireAuth = (options) => {
   const { isAuthenticated, isReady } = useAuth();
-  const { open } = useAuthModal();
-
   useEffect(() => {
     if (!isAuthenticated && isReady) {
-      open({ mode: options?.mode });
+      router.replace(options?.mode === 'signin' ? '/login' : '/signup');
     }
-  }, [isAuthenticated, open, options?.mode, isReady]);
+  }, [isAuthenticated, options?.mode, isReady]);
 };
 
 export default useAuth;

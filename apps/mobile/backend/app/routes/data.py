@@ -2,14 +2,21 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.models.user import User, UserStatus
 from app.utils.database import engine, get_db
+from app.utils.security import get_current_active_user
 
-router = APIRouter(tags=["Data"])
+def require_profile(user: User = Depends(get_current_active_user)):
+    if not all(value and value.strip() for value in [user.first_name, user.last_name, user.city, user.province]):
+        raise HTTPException(status_code=403, detail="Complete your profile before using SafeMeet")
+    return user
+
+
+router = APIRouter(tags=["Data"], dependencies=[Depends(require_profile)])
 
 
 def serialize_value(value: Any):
@@ -38,12 +45,11 @@ def rows_from_table(db: Session, table_name: str, limit: int = 50):
 @router.get("/discover/users")
 def discover_users(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
     current_user_id: Optional[int] = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
 ):
-    query = select(User).where(User.status != UserStatus.DEACTIVATED).limit(limit)
-    if current_user_id:
-        query = query.where(User.id != current_user_id)
+    query = select(User).where(User.status.notin_([UserStatus.DEACTIVATED, UserStatus.SUSPENDED]), User.id != current_user.id).limit(limit)
 
     users = db.scalars(query).all()
     return [
@@ -79,8 +85,11 @@ def list_plans(db: Session = Depends(get_db), limit: int = Query(default=50, ge=
 
 
 @router.get("/bookings")
-def list_bookings(db: Session = Depends(get_db), limit: int = Query(default=50, ge=1, le=100)):
-    return rows_from_table(db, "bookings", limit)
+def list_bookings(db: Session = Depends(get_db), limit: int = Query(default=50, ge=1, le=100), current_user: User = Depends(get_current_active_user)):
+    if not table_exists("bookings") or "user_id" not in {column["name"] for column in inspect(engine).get_columns("bookings")}:
+        return []
+    result = db.execute(text("SELECT * FROM bookings WHERE user_id = :user_id LIMIT :limit"), {"user_id": current_user.id, "limit": limit})
+    return [{key: serialize_value(value) for key, value in row._mapping.items()} for row in result]
 
 
 @router.get("/stores")
@@ -89,23 +98,22 @@ def list_stores(db: Session = Depends(get_db), limit: int = Query(default=50, ge
 
 
 @router.get("/wallet/summary")
-def wallet_summary(user_id: Optional[int] = None, db: Session = Depends(get_db)):
+def wallet_summary(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     transactions = []
     balance = 0
 
     if table_exists("wallet_transactions"):
         query = "SELECT * FROM wallet_transactions"
         params: dict[str, Any] = {}
-        if user_id:
-            query += " WHERE user_id = :user_id"
-            params["user_id"] = user_id
+        query += " WHERE user_id = :user_id"
+        params["user_id"] = current_user.id
         query += " ORDER BY created_at DESC LIMIT 20"
         result = db.execute(text(query), params)
         transactions = [
             {key: serialize_value(value) for key, value in row._mapping.items()}
             for row in result
         ]
-        balance = sum(float(row.get("amount") or 0) for row in transactions)
+        balance = float(db.execute(text("SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions WHERE user_id = :user_id"), {"user_id": current_user.id}).scalar() or 0)
 
     return {
         "balance": balance,

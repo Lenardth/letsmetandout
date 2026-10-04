@@ -1,5 +1,7 @@
 
 import { useAuth } from '@/utils/auth/useAuth';
+import { hasCompleteProfile } from '@/utils/auth/profile';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
@@ -12,7 +14,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 30, // 30 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -20,9 +22,14 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const { initiate, isReady } = useAuth();
+  const { initiate, isReady, auth } = useAuth();
+  const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [startupFinished, setStartupFinished] = useState(false);
+
+  useEffect(() => {
+    queryClient.clear();
+  }, [auth?.access_token]);
 
   useEffect(() => {
     initiate();
@@ -35,7 +42,7 @@ export default function RootLayout() {
     return () => clearTimeout(timeout);
   }, [logoLoaded]);
 
-  if (!isReady || !startupFinished) {
+  if (!isReady || !startupFinished || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
         <Image
@@ -56,6 +63,16 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
           <Stack.Screen name="index" />
+          <Stack.Protected guard={!auth}>
+            <Stack.Screen name="signup" />
+            <Stack.Screen name="login" />
+          </Stack.Protected>
+          <Stack.Protected guard={!!auth}>
+            <Stack.Screen name="complete-profile" />
+          </Stack.Protected>
+          <Stack.Protected guard={!!auth && hasCompleteProfile(auth.profile)}>
+            <Stack.Screen name="(tabs)" />
+          </Stack.Protected>
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>

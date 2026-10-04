@@ -23,11 +23,18 @@ apiClient.interceptors.request.use((config) => {
   const auth = useAuthStore.getState().auth;
   const token = auth?.access_token || auth?.token || (typeof auth === 'string' ? auth : null);
 
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
+});
+
+apiClient.interceptors.response.use((response) => response, (error) => {
+  if (error.response?.status === 401 && !error.config?.url?.startsWith('/auth/login')) {
+    useAuthStore.getState().setAuth(null);
+  }
+  return Promise.reject(error);
 });
 
 export default apiClient;

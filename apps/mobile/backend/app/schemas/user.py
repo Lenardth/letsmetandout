@@ -1,7 +1,7 @@
 """
 User schemas for SafeMeet application
 """
-from typing import List, Optional, Dict, Any, Annotated
+from typing import List, Optional, Dict, Any, Annotated, Literal
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
@@ -22,20 +22,24 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
-    id_number: str
-    terms_accepted: bool = True
-    privacy_accepted: bool = True
-    safety_guidelines_accepted: bool = True
+    first_name: str = Field(min_length=1, max_length=100, pattern=r"\S")
+    last_name: str = Field(min_length=1, max_length=100, pattern=r"\S")
+    phone: str = Field(pattern=r"^\+27[6-8]\d{8}$")
+    city: str = Field(min_length=1, max_length=100, pattern=r"\S")
+    province: Literal["Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape"]
+    password: str = Field(min_length=8, max_length=72, pattern=r"^[\x20-\x7E]+$")
+    terms_accepted: Literal[True]
+    privacy_accepted: Literal[True]
+    safety_guidelines_accepted: Literal[True]
 
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone: Optional[str] = None
+    first_name: Optional[str] = Field(default=None, min_length=1, max_length=100, pattern=r"\S")
+    last_name: Optional[str] = Field(default=None, min_length=1, max_length=100, pattern=r"\S")
+    phone: Optional[str] = Field(default=None, pattern=r"^\+27[6-8]\d{8}$")
     address: Optional[str] = None
-    city: Optional[str] = None
-    province: Optional[str] = None
+    city: Optional[str] = Field(default=None, min_length=1, max_length=100, pattern=r"\S")
+    province: Optional[Literal["Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape"]] = None
     interests: Optional[List[str]] = None
     safety_preferences: Optional[Dict[str, Any]] = None
     bio: Optional[str] = None
