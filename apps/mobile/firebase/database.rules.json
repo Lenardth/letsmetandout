@@ -1,0 +1,238 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "profiles": {
+      ".indexOn": [
+        "profile_complete"
+      ],
+      ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && query.orderByChild == 'profile_complete' && query.equalTo == true && query.limitToFirst != null && query.limitToFirst <= 101",
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid || (auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && data.child('profile_complete').val() == true)",
+        ".write": "auth != null && auth.uid == $uid && newData.exists()",
+        ".validate": "newData.hasChildren([\"first_name\", \"last_name\", \"city\", \"province\", \"bio\", \"profile_complete\", \"created_at\"]) && newData.child('profile_complete').isBoolean() && newData.child('profile_complete').val() == (newData.child('first_name').isString() && newData.child('first_name').val().matches(/.*\\S.*/) && newData.child('last_name').isString() && newData.child('last_name').val().matches(/.*\\S.*/) && newData.child('city').isString() && newData.child('city').val().matches(/.*\\S.*/) && newData.child('province').isString() && newData.child('province').val().matches(/.*\\S.*/)) && newData.child('created_at').isNumber() && ((!data.exists() && newData.child('created_at').val() == now) || (data.exists() && newData.child('created_at').val() == data.child('created_at').val()))",
+        "first_name": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "last_name": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "city": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "province": {
+          ".validate": "newData.isString() && (newData.val() == \"\" || newData.val() == \"Eastern Cape\" || newData.val() == \"Free State\" || newData.val() == \"Gauteng\" || newData.val() == \"KwaZulu-Natal\" || newData.val() == \"Limpopo\" || newData.val() == \"Mpumalanga\" || newData.val() == \"Northern Cape\" || newData.val() == \"North West\" || newData.val() == \"Western Cape\")"
+        },
+        "bio": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "interests": {
+          ".validate": "newData.numChildren() <= 20",
+          "$index": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          }
+        },
+        "profile_photo_url": {
+          ".validate": "newData.isString() && newData.val().beginsWith(\"https://\")"
+        },
+        "profile_complete": {
+          ".validate": "newData.isBoolean()"
+        },
+        "created_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "account_details": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren([\"phone\", \"terms_accepted\", \"privacy_accepted\", \"safety_guidelines_accepted\"])",
+        "phone": {
+          ".validate": "newData.isString() && newData.val().matches(/^[+]27[6-8][0-9]{8}$/)"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "terms_accepted": {
+          ".validate": "newData.val() == true"
+        },
+        "privacy_accepted": {
+          ".validate": "newData.val() == true"
+        },
+        "safety_guidelines_accepted": {
+          ".validate": "newData.val() == true"
+        }
+      }
+    },
+    "groups": {
+      ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true",
+      ".indexOn": [
+        "created_at"
+      ]
+    },
+    "meetup_plans": {
+      ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true",
+      ".indexOn": [
+        "created_at"
+      ]
+    },
+    "stores": {
+      ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true",
+      ".indexOn": [
+        "created_at",
+        "owner_id"
+      ],
+      "$store": {
+        ".write": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && newData.exists() && newData.child('owner_id').val() == auth.uid && (!data.exists() || data.child('owner_id').val() == auth.uid)",
+        ".validate": "newData.hasChildren(['owner_id','name','category','address','city','location','phone','description','deposit_cents','max_party_size','created_at']) && ((!data.exists() && newData.child('created_at').val() == now) || (data.exists() && newData.child('created_at').val() == data.child('created_at').val()))",
+        "owner_id": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && newData.val().matches(/.*\\S.*/)"
+        },
+        "category": {
+          ".validate": "newData.val() == 'Restaurant' || newData.val() == 'Caf\u00e9' || newData.val() == 'Venue'"
+        },
+        "address": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && newData.val().matches(/.*\\S.*/)"
+        },
+        "city": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && newData.val().matches(/.*\\S.*/)"
+        },
+        "location": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "phone": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && newData.val().matches(/.*\\S.*/)"
+        },
+        "description": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "image": {
+          ".validate": "newData.isString() && newData.val().beginsWith('https://')"
+        },
+        "deposit_cents": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000 && newData.val() % 1 == 0"
+        },
+        "max_party_size": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50 && newData.val() % 1 == 0"
+        },
+        "created_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "bookings": {
+      "$uid": {
+        ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && auth.uid == $uid",
+        ".indexOn": [
+          "created_at"
+        ],
+        "$booking": {
+          ".validate": "newData.hasChildren([\"user_id\", \"store_id\", \"title\", \"location\", \"booking_date\", \"guests\", \"deposit_cents\", \"payment_status\", \"status\", \"created_at\"]) && ((!data.exists() && (newData.child('user_id').val() == auth.uid && newData.child('status').val() == 'requested' && root.child('stores').child(newData.child('store_id').val()).exists() && newData.child('deposit_cents').val() == root.child('stores').child(newData.child('store_id').val()).child('deposit_cents').val() && newData.child('title').val() == root.child('stores').child(newData.child('store_id').val()).child('name').val() && newData.child('location').val() == root.child('stores').child(newData.child('store_id').val()).child('location').val() && newData.child('guests').val() <= root.child('stores').child(newData.child('store_id').val()).child('max_party_size').val() && newData.child('booking_date').val() > now && newData.child('created_at').val() == now)) || (data.exists() && (root.child('stores').child(data.child('store_id').val()).child('owner_id').val() == auth.uid && data.child('status').val() == 'requested' && (newData.child('status').val() == 'accepted' || newData.child('status').val() == 'declined') && newData.child('user_id').val() == data.child('user_id').val() && newData.child('store_id').val() == data.child('store_id').val() && newData.child('title').val() == data.child('title').val() && newData.child('location').val() == data.child('location').val() && newData.child('booking_date').val() == data.child('booking_date').val() && newData.child('guests').val() == data.child('guests').val() && newData.child('deposit_cents').val() == data.child('deposit_cents').val() && newData.child('payment_status').val() == data.child('payment_status').val() && newData.child('created_at').val() == data.child('created_at').val()))) && ((newData.child('deposit_cents').val() > 0 && newData.child('payment_status').val() == 'unpaid') || (newData.child('deposit_cents').val() == 0 && newData.child('payment_status').val() == 'not_required'))",
+          "user_id": {
+            ".validate": "newData.isString()"
+          },
+          "store_id": {
+            ".validate": "newData.isString()"
+          },
+          "title": {
+            ".validate": "newData.isString()"
+          },
+          "location": {
+            ".validate": "newData.isString()"
+          },
+          "payment_status": {
+            ".validate": "newData.isString()"
+          },
+          "status": {
+            ".validate": "newData.isString()"
+          },
+          "booking_date": {
+            ".validate": "newData.isNumber()"
+          },
+          "created_at": {
+            ".validate": "newData.isNumber()"
+          },
+          "deposit_cents": {
+            ".validate": "newData.isNumber()"
+          },
+          "guests": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50 && newData.val() % 1 == 0"
+          },
+          "$other": {
+            ".validate": false
+          },
+          ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && (auth.uid == $uid || (root.child('stores').child(data.child('store_id').val()).child('owner_id').val() == auth.uid))",
+          ".write": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && newData.exists() && newData.child('user_id').val() == $uid && ((!data.exists() && auth.uid == $uid) || (data.exists() && (root.child('stores').child(data.child('store_id').val()).child('owner_id').val() == auth.uid)))"
+        }
+      }
+    },
+    "wallet_transactions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid && (auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true)",
+        ".indexOn": [
+          "created_at"
+        ]
+      }
+    },
+    "wallets": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid && (auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true)"
+      }
+    },
+    "reservation_requests": {
+      "$store": {
+        ".read": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && (root.child('stores').child($store).child('owner_id').val() == auth.uid)",
+        ".indexOn": [
+          "created_at"
+        ],
+        "$booking": {
+          ".validate": "newData.hasChildren([\"user_id\", \"store_id\", \"title\", \"location\", \"booking_date\", \"guests\", \"deposit_cents\", \"payment_status\", \"status\", \"created_at\"]) && ((!data.exists() && (newData.child('user_id').val() == auth.uid && newData.child('status').val() == 'requested' && root.child('stores').child(newData.child('store_id').val()).exists() && newData.child('deposit_cents').val() == root.child('stores').child(newData.child('store_id').val()).child('deposit_cents').val() && newData.child('title').val() == root.child('stores').child(newData.child('store_id').val()).child('name').val() && newData.child('location').val() == root.child('stores').child(newData.child('store_id').val()).child('location').val() && newData.child('guests').val() <= root.child('stores').child(newData.child('store_id').val()).child('max_party_size').val() && newData.child('booking_date').val() > now && newData.child('created_at').val() == now)) || (data.exists() && (root.child('stores').child(data.child('store_id').val()).child('owner_id').val() == auth.uid && data.child('status').val() == 'requested' && (newData.child('status').val() == 'accepted' || newData.child('status').val() == 'declined') && newData.child('user_id').val() == data.child('user_id').val() && newData.child('store_id').val() == data.child('store_id').val() && newData.child('title').val() == data.child('title').val() && newData.child('location').val() == data.child('location').val() && newData.child('booking_date').val() == data.child('booking_date').val() && newData.child('guests').val() == data.child('guests').val() && newData.child('deposit_cents').val() == data.child('deposit_cents').val() && newData.child('payment_status').val() == data.child('payment_status').val() && newData.child('created_at').val() == data.child('created_at').val()))) && ((newData.child('deposit_cents').val() > 0 && newData.child('payment_status').val() == 'unpaid') || (newData.child('deposit_cents').val() == 0 && newData.child('payment_status').val() == 'not_required'))",
+          "user_id": {
+            ".validate": "newData.isString()"
+          },
+          "store_id": {
+            ".validate": "newData.isString()"
+          },
+          "title": {
+            ".validate": "newData.isString()"
+          },
+          "location": {
+            ".validate": "newData.isString()"
+          },
+          "payment_status": {
+            ".validate": "newData.isString()"
+          },
+          "status": {
+            ".validate": "newData.isString()"
+          },
+          "booking_date": {
+            ".validate": "newData.isNumber()"
+          },
+          "created_at": {
+            ".validate": "newData.isNumber()"
+          },
+          "deposit_cents": {
+            ".validate": "newData.isNumber()"
+          },
+          "guests": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50 && newData.val() % 1 == 0"
+          },
+          "$other": {
+            ".validate": false
+          },
+          ".write": "auth != null && auth.token.email_verified == true && root.child('profiles').child(auth.uid).child('profile_complete').val() == true && newData.exists() && newData.child('store_id').val() == $store && ((!data.exists() && newData.child('user_id').val() == auth.uid) || (data.exists() && (root.child('stores').child($store).child('owner_id').val() == auth.uid)))"
+        }
+      }
+    }
+  }
+}

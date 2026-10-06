@@ -4,10 +4,10 @@ export default function GroupsScreen() {
   return (
     <RealDataScreen
       title="Groups"
-      subtitle="Groups stored in the backend"
+      subtitle="Find your community"
       endpoint="/groups"
       emptyTitle="No groups yet"
-      emptyMessage="When groups are created in the database, they will be listed here."
+      emptyMessage="Community groups will appear here when they are available."
       titleFields={["name", "title", "activity", "id"]}
       detailFields={["activity", "category", "location", "status", "created_at"]}
     />

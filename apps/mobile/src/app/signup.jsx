@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import apiClient from "../utils/api";
 import { useAuth } from "../utils/auth/useAuth";
 import { useTheme } from "../utils/theme";
 
@@ -13,7 +12,7 @@ export default function Signup() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [form, setForm] = useState({ first_name: "", last_name: "", email: "", phone: "", password: "", city: "", province: "", bio: "", interests: [] });
   const [confirmation, setConfirmation] = useState("");
   const [accepted, setAccepted] = useState(false);
@@ -31,10 +30,11 @@ export default function Signup() {
     try {
       const phone = form.phone.replace(/\s/g, "");
       const payload = { ...form, first_name: form.first_name.trim(), last_name: form.last_name.trim(), city: form.city.trim(), email: form.email.trim().toLowerCase(), phone: phone.startsWith("0") ? "+27" + phone.slice(1) : phone, terms_accepted: true, privacy_accepted: true, safety_guidelines_accepted: true };
-      await apiClient.post('/auth/register', payload);
-      const result = await login(payload.email, payload.password);
-      if (result.success) router.replace('/(tabs)/discover');
-      else router.replace('/login');
+      const result = await register(payload);
+      if (result.needsConfirmation) {
+        Alert.alert('Confirm your email', 'Open the confirmation email from SafeMeet, then sign in.');
+        router.replace('/login');
+      } else router.replace('/(tabs)/discover');
     } catch (failure) {
       const detail = failure.response?.data?.detail;
       setError(Array.isArray(detail) ? detail.map((item) => item.msg).join("\n") : detail || failure.message || "Could not create your profile.");

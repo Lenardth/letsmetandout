@@ -4,10 +4,10 @@ export default function PlansScreen() {
   return (
     <RealDataScreen
       title="Plans"
-      subtitle="Meetup plans from the backend"
+      subtitle="Plan your next meetup"
       endpoint="/plans"
       emptyTitle="No plans yet"
-      emptyMessage="Create meetup plans in the backend and they will appear here."
+      emptyMessage="Meetup plans will appear here when they are available."
       titleFields={["title", "name", "activity", "id"]}
       detailFields={["description", "planned_date", "location", "status", "created_at"]}
     />

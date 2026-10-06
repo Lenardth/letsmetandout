@@ -4,7 +4,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, Te
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../utils/auth/useAuth";
 import { useTheme } from "../utils/theme";
-import apiClient from "../utils/api";
+import { updateOwnProfile } from "../utils/firebaseData";
 
 export default function CompleteProfile() {
   const { auth, setAuth, signOut } = useAuth();
@@ -20,7 +20,7 @@ export default function CompleteProfile() {
     setBusy(true);
     setError('');
     try {
-      const { data } = await apiClient.put('/users/me', Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()])));
+      const data = await updateOwnProfile(Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()])));
       setAuth({ ...auth, profile: data });
       router.replace('/(tabs)/profile');
     } catch (failure) {

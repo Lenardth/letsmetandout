@@ -33,7 +33,7 @@ export default function ProfileScreen() {
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 28 }}>Profile</Text>
             <Text style={{ color: colors.textSecondary, fontFamily: "Inter_400Regular", fontSize: 15 }}>
-              Your authenticated backend profile
+              Your SafeMeet profile
             </Text>
           </View>
           {isSignedIn && (
@@ -58,7 +58,7 @@ export default function ProfileScreen() {
         {!isSignedIn && (
           <EmptyState
             title="No signed-in user"
-            message="Log in with a real backend account to see your profile data here."
+            message="Log in with a SafeMeet account to see your profile data here."
           />
         )}
 

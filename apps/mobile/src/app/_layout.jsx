@@ -32,7 +32,7 @@ export default function RootLayout() {
   }, [auth?.access_token]);
 
   useEffect(() => {
-    initiate();
+    return initiate();
   }, [initiate]);
 
   useEffect(() => {
@@ -72,6 +72,8 @@ export default function RootLayout() {
           </Stack.Protected>
           <Stack.Protected guard={!!auth && hasCompleteProfile(auth.profile)}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="business" />
+            <Stack.Screen name="reserve" />
           </Stack.Protected>
         </Stack>
       </GestureHandlerRootView>

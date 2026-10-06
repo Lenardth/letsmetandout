@@ -1,27 +1,12 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
 
-export const authKey = 'safemeet-session';
-
-/**
- * This store manages the authentication state of the application.
- */
+// Firebase owns session persistence and refresh; this store contains UI state only.
 export const useAuthStore = create((set) => ({
   isReady: false,
   auth: null,
-  setAuth: (auth) => {
-    if (auth) {
-      SecureStore.setItemAsync(authKey, JSON.stringify(auth)).catch(() => {});
-    } else {
-      SecureStore.deleteItemAsync(authKey).catch(() => {});
-    }
-    set({ auth });
-  },
+  setAuth: (auth) => set({ auth }),
 }));
 
-/**
- * This store manages the state of the authentication modal.
- */
 export const useAuthModal = create((set) => ({
   isOpen: false,
   mode: 'signup',

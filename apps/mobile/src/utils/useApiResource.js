@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import apiClient from "./api";
+import { loadFirebaseResource } from "./firebaseData";
 
 export function useApiResource(path, options = {}) {
   const [data, setData] = useState(options.initialData ?? null);
@@ -12,8 +12,7 @@ export function useApiResource(path, options = {}) {
     setError(null);
 
     try {
-      const response = await apiClient.get(path, { params: options.params });
-      setData(response.data);
+      setData(await loadFirebaseResource(path, options.params));
     } catch (requestError) {
       setError(requestError.response?.data?.detail || requestError.message);
     } finally {

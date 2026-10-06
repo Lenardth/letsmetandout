@@ -1,0 +1,107 @@
+rules_version = '2';
+// Public profiles contain only name/city/bio/interests/photo, completion and created_at.
+// Private account_details contain phone and three required agreements.
+// Stores contain owner_id, name/category/address/city/location/phone/image/description,
+// integer deposit_cents and max_party_size, plus immutable created_at timestamp.
+// Booking mirrors live at accounts/{uid}/bookings/{id} and stores/{store}/reservation_requests/{id}.
+// They contain immutable user/store/merchant IDs, title/location, numeric booking_date (epoch ms),
+// guests/deposit, timestamp created_at, unpaid/not_required payment_status and requested/accepted/declined status.
+// Wallet balances/transactions, groups and meetup_plans are maintained only by a trusted server.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(uid) { return isAuthenticated() && request.auth.uid == uid; }
+    function confirmed() { return isAuthenticated() && request.auth.token.email_verified == true; }
+    function member() { return confirmed() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.profile_complete == true; }
+    function text(value, maximum) { return value is string && value.size() <= maximum; }
+    function photo(value) { return value == null || (text(value, 2048) && value.matches('https://.+')); }
+    function isValidProfile(p) {
+      return p.keys().hasAll(['first_name','last_name','city','province','bio','interests','profile_photo_url','profile_complete','created_at'])
+        && p.keys().hasOnly(['first_name','last_name','city','province','bio','interests','profile_photo_url','profile_complete','created_at'])
+        && text(p.first_name, 80) && text(p.last_name, 80) && text(p.city, 100) && text(p.province, 100)
+        && text(p.bio, 2000) && photo(p.profile_photo_url)
+        && p.interests is list && p.interests.size() <= 10
+        && p.interests.hasOnly(['Coffee','Food','Walking','Fitness','Art','Music','Travel','Technology','Books','Photography'])
+        && p.profile_complete is bool
+        && p.profile_complete == (p.first_name.matches('.*[^\\s].*') && p.last_name.matches('.*[^\\s].*') && p.city.matches('.*[^\\s].*') && p.province.matches('.*[^\\s].*'))
+        && p.created_at is timestamp;
+    }
+    match /profiles/{uid} {
+      allow get: if isOwner(uid) || (member() && resource.data.profile_complete == true);
+      allow list: if member() && resource.data.profile_complete == true && request.query.limit <= 101;
+      allow create: if isOwner(uid) && isValidProfile(request.resource.data) && request.resource.data.created_at == request.time;
+      allow update: if isOwner(uid) && isValidProfile(request.resource.data) && request.resource.data.created_at == resource.data.created_at;
+    }
+    function isValidDetails(p) {
+      return p.keys().hasAll(['phone','terms_accepted','privacy_accepted','safety_guidelines_accepted'])
+        && p.keys().hasOnly(['phone','terms_accepted','privacy_accepted','safety_guidelines_accepted'])
+        && text(p.phone, 20) && p.phone.matches('[+]27[6-8][0-9]{8}')
+        && p.terms_accepted == true && p.privacy_accepted == true && p.safety_guidelines_accepted == true;
+    }
+    match /account_details/{uid} {
+      allow get: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidDetails(request.resource.data);
+    }
+    function isValidStore(s) {
+      return s.keys().hasAll(['owner_id','name','category','address','city','location','phone','image','description','deposit_cents','max_party_size','created_at'])
+        && s.keys().hasOnly(['owner_id','name','category','address','city','location','phone','image','description','deposit_cents','max_party_size','created_at'])
+        && text(s.owner_id, 128) && text(s.name, 150) && s.name.size() > 0
+        && s.category in ['Restaurant','Café','Venue'] && text(s.address, 300) && s.address.size() > 0
+        && text(s.city, 100) && s.city.size() > 0 && s.location == s.city
+        && text(s.phone, 30) && s.phone.size() > 0 && photo(s.image) && text(s.description, 2000)
+        && s.deposit_cents is int && s.deposit_cents >= 0 && s.deposit_cents <= 1000000
+        && s.max_party_size is int && s.max_party_size >= 1 && s.max_party_size <= 50 && s.created_at is timestamp;
+    }
+    match /stores/{store} {
+      allow read: if member();
+      allow create: if member() && isOwner(request.resource.data.owner_id) && isValidStore(request.resource.data) && request.resource.data.created_at == request.time;
+      allow update: if member() && isOwner(resource.data.owner_id) && request.resource.data.owner_id == resource.data.owner_id
+        && isValidStore(request.resource.data) && request.resource.data.created_at == resource.data.created_at;
+    }
+    function isValidBooking(b) {
+      return b.keys().hasAll(['user_id','store_id','booking_owner_id','title','location','booking_date','guests','deposit_cents','payment_status','status','created_at'])
+        && b.keys().hasOnly(['user_id','store_id','booking_owner_id','title','location','booking_date','guests','deposit_cents','payment_status','status','created_at'])
+        && text(b.user_id,128) && text(b.store_id,128) && b.store_id.matches('[A-Za-z0-9_-]{1,128}') && text(b.booking_owner_id,128)
+        && text(b.title,150) && text(b.location,100) && b.booking_date is int && b.booking_date > 0
+        && b.guests is int && b.guests >= 1 && b.guests <= 50 && b.deposit_cents is int && b.deposit_cents >= 0 && b.deposit_cents <= 1000000
+        && b.payment_status in ['unpaid','not_required'] && b.status in ['requested','accepted','declined'] && b.created_at is timestamp;
+    }
+    function validNewBooking(uid, store, id) {
+      let b = request.resource.data;
+      let s = get(/databases/$(database)/documents/stores/$(store)).data;
+      return member() && isOwner(uid) && isValidBooking(b) && b.user_id == uid && b.store_id == store
+        && b.booking_owner_id == s.owner_id && b.title == s.name && b.location == s.location
+        && b.guests <= s.max_party_size && b.deposit_cents == s.deposit_cents
+        && b.booking_date > request.time.toMillis() && b.created_at == request.time && b.status == 'requested'
+        && b.payment_status == (s.deposit_cents > 0 ? 'unpaid' : 'not_required')
+        && getAfter(/databases/$(database)/documents/accounts/$(uid)/bookings/$(id)).data == b
+        && getAfter(/databases/$(database)/documents/stores/$(store)/reservation_requests/$(id)).data == b;
+    }
+    function validAnswer(uid, store, id) {
+      let b = request.resource.data;
+      return member() && isOwner(resource.data.booking_owner_id)
+        && isOwner(get(/databases/$(database)/documents/stores/$(store)).data.owner_id)
+        && isValidBooking(b) && resource.data.status == 'requested' && b.status in ['accepted','declined']
+        && b.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && getAfter(/databases/$(database)/documents/accounts/$(uid)/bookings/$(id)).data == b
+        && getAfter(/databases/$(database)/documents/stores/$(store)/reservation_requests/$(id)).data == b;
+    }
+    match /accounts/{uid}/bookings/{id} {
+      allow read: if confirmed() && (isOwner(uid) || isOwner(resource.data.booking_owner_id));
+      allow create: if validNewBooking(uid, request.resource.data.store_id, id);
+      allow update: if validAnswer(uid, resource.data.store_id, id);
+    }
+    match /stores/{store}/reservation_requests/{id} {
+      allow read: if member() && isOwner(get(/databases/$(database)/documents/stores/$(store)).data.owner_id);
+      allow create: if validNewBooking(request.resource.data.user_id, store, id);
+      allow update: if validAnswer(resource.data.user_id, store, id);
+    }
+    match /wallets/{uid} {
+      allow get: if confirmed() && isOwner(uid);
+      match /transactions/{id} { allow read: if confirmed() && isOwner(uid); }
+    }
+    match /groups/{id} { allow read: if member(); }
+    match /meetup_plans/{id} { allow read: if member(); }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

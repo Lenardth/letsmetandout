@@ -32,7 +32,7 @@ export default function WalletScreen() {
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 28 }}>Wallet</Text>
             <Text style={{ color: colors.textSecondary, fontFamily: "Inter_400Regular", fontSize: 15 }}>
-              Balance and transactions from the backend
+              Your balance and recent activity
             </Text>
           </View>
           <TouchableOpacity
@@ -76,7 +76,7 @@ export default function WalletScreen() {
         {!loading && !error && transactions.length === 0 && (
           <EmptyState
             title="No wallet transactions yet"
-            message="Real wallet transactions will appear here once they are created in the backend."
+            message="Your transactions will appear here when you use your wallet."
           />
         )}
 

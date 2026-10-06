@@ -8,7 +8,12 @@
     "dev:local": "npx expo start --localhost",
     "dev:tunnel": "npx expo start --tunnel",
     "typecheck": "tsc --noEmit",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "firebase:check": "node scripts/check-firebase.mjs",
+    "test:firebase": "node --test tests/firebaseData.test.mjs",
+    "test:business": "node --test tests/business.test.mjs",
+    "test:rules": "npx -y firebase-tools@latest emulators:exec --only firestore --project demo-safemeet \"node --test tests/firestoreRules.test.mjs\"",
+    "test:auth": "node --test tests/authLoading.test.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/dev": "^0.4.7",
@@ -20,7 +25,6 @@
     "@react-native-masked-view/masked-view": "0.3.2",
     "@react-native-picker/picker": "2.11.4",
     "@shopify/react-native-skia": "2.6.2",
-    "@supabase/supabase-js": "^2.117.2",
     "@tanstack/react-query": "^5.72.2",
     "@teovilla/react-native-web-maps": "^0.9.5",
     "@uploadcare/upload-client": "6.14.3",
@@ -59,6 +63,7 @@
     "expo-updates": "~57.0.24",
     "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",
+    "firebase": "^12.19.0",
     "lodash": "^4.17.21",
     "lucide-react-native": "^0.525.0",
     "moti": "0.30.0",
@@ -87,6 +92,7 @@
     "zustand": "5.0.3"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/react": "~19.2.0",
     "autoprefixer": "10.4.20",
     "patch-package": "^8.0.0",
