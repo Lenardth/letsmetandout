@@ -1,6 +1,9 @@
 import type { LocationGeocodedAddress } from 'expo-location';
 
 type Coords = { latitude: number; longitude: number };
+declare const module: {
+  exports: Record<string, unknown> & { default?: unknown };
+};
 
 export async function reverseGeocodeAsync({
   latitude,

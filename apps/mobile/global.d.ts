@@ -8,3 +8,5 @@ declare module 'react-native-web-refresh-control' {
 
   export const RefreshControl: ComponentType<RefreshControlProps>;
 }
+
+declare module '*.css';
