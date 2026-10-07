@@ -36,3 +36,16 @@ app-example
 
 caches/
 public/
+
+# Local server credentials, environments and emulator data never enter mobile builds
+backend/
+.env
+.env.*
+!.env.example
+.firebase-demo/
+.agents/
+.codex/
+.aws/
+firebase-debug*.log
+firestore-debug*.log
+ui-debug*.log

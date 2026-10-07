@@ -46,6 +46,7 @@ export const useAuth = () => {
     } catch (error) { return { success: false, error: authErrorMessage(error) }; }
   }, [setAuth]);
   const register = useCallback(async ({ email, password, ...profile }) => {
+    if (!['customer', 'provider'].includes(profile.account_type)) throw new Error('Choose Customer or Service provider before registering.');
     const { auth: firebaseAuth } = getFirebase();
     let user;
     try { ({ user } = await withDeadline(createUserWithEmailAndPassword(firebaseAuth, email, password), 'Account creation could not be confirmed. Check your connection, then try signing in before creating another account.', 30000)); }

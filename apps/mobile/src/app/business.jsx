@@ -1,22 +1,22 @@
 import { useCallback, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/theme';
 import { createBusiness, ownBusinesses, businessRequests, answerReservation } from '../utils/business';
 import BusinessField from '../components/BusinessField';
 export default function Business() {
-  const { colors } = useTheme(); const insets = useSafeAreaInsets(); const router = useRouter();
+  const { colors } = useTheme(); const insets = useSafeAreaInsets();
   const [form, setForm] = useState({ name: '', category: 'Restaurant', city: '', address: '', phone: '', image: '', description: '', deposit_rands: '0', max_party_size: '8' });
   const [stores, setStores] = useState([]); const [requests, setRequests] = useState([]); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const refresh = useCallback(async () => { try { const listings = await ownBusinesses(); setStores(listings); setRequests((await Promise.all(listings.map((store) => businessRequests(store.id)))).flat()); } catch (failure) { setError(failure.message); } }, []);
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
   async function publish() { if (busy) return; setBusy(true); setError(''); setNotice(''); try { await createBusiness(form); setNotice('Your business is listed.'); setForm({ ...form, name: '', address: '', description: '', image: '' }); await refresh(); } catch (failure) { setError(failure.message); } finally { setBusy(false); } }
   async function answer(record, status) { if (busy) return; setBusy(true); setError(''); try { await answerReservation(record, status); await refresh(); } catch (failure) { setError(failure.message); } finally { setBusy(false); } }
-  return <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: colors.background }} contentContainerStyle={{ padding: 24, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, gap: 16 }}>
-    <Text style={{ color: colors.text, fontSize: 28, fontWeight: '700' }}>Your business</Text><Text style={{ color: colors.textSecondary }}>Publish a restaurant, café or venue and manage table requests.</Text>
-    <TouchableOpacity onPress={() => router.back()}><Text style={{ color: colors.primary }}>Back to places</Text></TouchableOpacity>
+  return <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: colors.background }} contentContainerStyle={{ padding: 24, paddingTop: insets.top + 24, paddingBottom: insets.bottom + 100, gap: 16 }}>
+    <Text style={{ color: colors.text, fontSize: 28, fontWeight: '700' }}>Provider dashboard</Text><Text style={{ color: colors.textSecondary }}>Publish a restaurant, café or venue and manage table requests.</Text>
     {!!error && <Text accessibilityRole="alert" style={{ color: colors.error }}>{error}</Text>}{!!notice && <Text style={{ color: colors.success }}>{notice}</Text>}
+    <TouchableOpacity accessibilityRole="button" disabled={busy} onPress={refresh}><Text style={{ color: colors.primary }}>Refresh listings and requests</Text></TouchableOpacity>
     <Text style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}>Reservation requests</Text>
     {requests.length === 0 && <Text style={{ color: colors.textSecondary }}>New table requests for your businesses appear here.</Text>}
     {requests.map((record) => <View key={record.id} style={{ backgroundColor: colors.surface, padding: 16, borderRadius: 12, gap: 8 }}>

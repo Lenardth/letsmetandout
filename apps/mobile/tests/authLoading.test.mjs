@@ -35,7 +35,7 @@ test('login returns an actionable failure when profile loading never finishes', 
 });
 test('signup sends verification even if profile creation stalls, then signs out with recovery instructions', async () => {
   const state=setup({createAccountProfile:never}); const auth=await hook();
-  await assert.rejects(auth.register({email:'owner@example.com',password:'password'}),/Your account was created.*profile could not be saved.*Resend verification/);
+  await assert.rejects(auth.register({email:'owner@example.com',password:'password',account_type:'customer'}),/Your account was created.*profile could not be saved.*Resend verification/);
   assert(state.events.includes('verification'));assert(state.events.includes('signout'));assert.deepEqual(state.writes,[null]);
 });
 test('startup releases readiness when a signed-in profile request stalls', async () => {
@@ -46,4 +46,12 @@ test('startup releases readiness when a signed-in profile request stalls', async
 test('database permissions and availability failures have useful messages', () => {
   assert.match(authErrorMessage({code:'permission-denied'}),/database permissions/);
   assert.match(authErrorMessage({code:'unavailable'}),/internet connection/);
+});
+
+test('registration requires a valid account type before Auth creates a user', async () => {
+  const state = setup(); const auth = await hook();
+  for (const account_type of [undefined, '', 'admin']) {
+    await assert.rejects(auth.register({ email: 'owner@example.com', password: 'password', account_type }), /Choose Customer/);
+  }
+  assert.equal(state.events.length, 0);
 });

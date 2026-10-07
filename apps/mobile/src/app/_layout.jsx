@@ -2,6 +2,7 @@
 import { useAuth } from '@/utils/auth/useAuth';
 import { hasCompleteProfile } from '@/utils/auth/profile';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useExperience } from '../utils/experience';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
@@ -23,6 +24,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const { initiate, isReady, auth } = useAuth();
+  const { mode, ready: experienceReady } = useExperience();
   const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [startupFinished, setStartupFinished] = useState(false);
@@ -42,7 +44,7 @@ export default function RootLayout() {
     return () => clearTimeout(timeout);
   }, [logoLoaded]);
 
-  if (!isReady || !startupFinished || (!fontsLoaded && !fontError)) {
+  if (!experienceReady || !isReady || !startupFinished || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
         <Image
@@ -68,12 +70,23 @@ export default function RootLayout() {
             <Stack.Screen name="login" />
           </Stack.Protected>
           <Stack.Protected guard={!!auth}>
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="saved" />
+          </Stack.Protected>
+          <Stack.Protected guard={!!auth}>
             <Stack.Screen name="complete-profile" />
+            <Stack.Screen name="choose-experience" />
           </Stack.Protected>
           <Stack.Protected guard={!!auth && hasCompleteProfile(auth.profile)}>
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="business" />
-            <Stack.Screen name="reserve" />
+            <Stack.Protected guard={mode === "provider"}>
+              <Stack.Screen name="business" />
+            </Stack.Protected>
+            <Stack.Protected guard={mode === "customer"}>
+              <Stack.Screen name="reserve" />
+              <Stack.Screen name="create-group" />
+              <Stack.Screen name="group" />
+            </Stack.Protected>
           </Stack.Protected>
         </Stack>
       </GestureHandlerRootView>

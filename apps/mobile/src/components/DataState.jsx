@@ -6,7 +6,7 @@ import { useTheme } from "../utils/theme";
 export function LoadingState({ label = "Loading data..." }) {
   const { colors } = useTheme();
   return (
-    <View style={{ padding: 32, alignItems: "center", gap: 12 }}>
+    <View style={{ padding: 38, alignItems: "center", gap: 12 }}>
       <ActivityIndicator color={colors.primary} />
       <Text style={{ color: colors.textSecondary, fontFamily: "Inter_500Medium" }}>{label}</Text>
     </View>
@@ -19,10 +19,15 @@ export function EmptyState({ title, message }) {
     <View
       style={{
         padding: 24,
-        borderRadius: 12,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.surface,
+        shadowColor: colors.shadow,
+        shadowOpacity: colors.shadowOpacity,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 2,
         gap: 8,
       }}
     >
@@ -40,7 +45,7 @@ export function ErrorState({ message, onRetry }) {
     <View
       style={{
         padding: 24,
-        borderRadius: 12,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: colors.error,
         backgroundColor: colors.surface,

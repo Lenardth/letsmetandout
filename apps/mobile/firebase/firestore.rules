@@ -1,107 +1,507 @@
 rules_version = '2';
-// Public profiles contain only name/city/bio/interests/photo, completion and created_at.
-// Private account_details contain phone and three required agreements.
-// Stores contain owner_id, name/category/address/city/location/phone/image/description,
-// integer deposit_cents and max_party_size, plus immutable created_at timestamp.
-// Booking mirrors live at accounts/{uid}/bookings/{id} and stores/{store}/reservation_requests/{id}.
-// They contain immutable user/store/merchant IDs, title/location, numeric booking_date (epoch ms),
-// guests/deposit, timestamp created_at, unpaid/not_required payment_status and requested/accepted/declined status.
-// Wallet balances/transactions, groups and meetup_plans are maintained only by a trusted server.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAuthenticated() { return request.auth != null; }
-    function isOwner(uid) { return isAuthenticated() && request.auth.uid == uid; }
-    function confirmed() { return isAuthenticated() && request.auth.token.email_verified == true; }
-    function member() { return confirmed() && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.profile_complete == true; }
-    function text(value, maximum) { return value is string && value.size() <= maximum; }
-    function photo(value) { return value == null || (text(value, 2048) && value.matches('https://.+')); }
-    function isValidProfile(p) {
-      return p.keys().hasAll(['first_name','last_name','city','province','bio','interests','profile_photo_url','profile_complete','created_at'])
-        && p.keys().hasOnly(['first_name','last_name','city','province','bio','interests','profile_photo_url','profile_complete','created_at'])
-        && text(p.first_name, 80) && text(p.last_name, 80) && text(p.city, 100) && text(p.province, 100)
-        && text(p.bio, 2000) && photo(p.profile_photo_url)
-        && p.interests is list && p.interests.size() <= 10
-        && p.interests.hasOnly(['Coffee','Food','Walking','Fitness','Art','Music','Travel','Technology','Books','Photography'])
-        && p.profile_complete is bool
-        && p.profile_complete == (p.first_name.matches('.*[^\\s].*') && p.last_name.matches('.*[^\\s].*') && p.city.matches('.*[^\\s].*') && p.province.matches('.*[^\\s].*'))
-        && p.created_at is timestamp;
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: profiles
+    // Document ID: {uid}
+    // Fields:
+    //   - first_name: string (required, 1-60 chars)
+    //   - last_name: string (required, 1-60 chars)
+    //   - city: string (required, 1-80 chars)
+    //   - province: string (required, 1-80 chars)
+    //   - bio: string (required, 0-500 chars)
+    //   - interests: list<string> (required, max 10 items; fixed interest choices)
+    //   - profile_photo_url: string|null (optional, HTTPS URL, max 2048 chars)
+    //   - profile_complete: bool (required, derived from the required fields above)
+    //   - created_at: timestamp (required, immutable)
+    //
+    // Collection: account_roles
+    // Document ID: {uid}
+    // Fields: account_type: customer|provider (required, immutable, owner-only read)
+    //
+    // Collection: account_details
+    // Document ID: {uid}
+    // Fields:
+    //   - phone: string (required, South African mobile in +27 format, max 20 chars)
+    //   - terms_accepted: bool (required, must be true)
+    //   - privacy_accepted: bool (required, must be true)
+    //   - safety_guidelines_accepted: bool (required, must be true)
+    //
+    // Collection: stores
+    // Document ID: {storeId}
+    // Fields:
+    //   - owner_id: string (required, immutable, authenticated uid)
+    //   - name: string (required, 1-150 chars)
+    //   - category: string (required, one of Restaurant|Café|Venue)
+    //   - address: string (required, 1-300 chars)
+    //   - city: string (required, 1-100 chars)
+    //   - location: string (required, 1-100 chars; same value as city)
+    //   - phone: string (required, 1-30 chars)
+    //   - image: string|null (optional, HTTPS URL, max 2048 chars)
+    //   - description: string (required, 0-2000 chars)
+    //   - deposit_cents: int (required, 0-1000000)
+    //   - max_party_size: int (required, 1-50)
+    //   - created_at: timestamp (required, immutable)
+    //
+    // Collection: accounts/{uid}/bookings
+    // Document ID: {bookingId}
+    // Fields:
+    //   - user_id: string (required, immutable, matches the parent uid)
+    //   - store_id: string (required, immutable)
+    //   - booking_owner_id: string (required, immutable, store owner uid)
+    //   - title: string (required, 1-150 chars, copied from store name)
+    //   - location: string (required, 1-100 chars, copied from store location)
+    //   - booking_date: int (required, future epoch milliseconds)
+    //   - guests: int (required, 1-50)
+    //   - deposit_cents: int (required, immutable, copied from store)
+    //   - payment_status: string (required, immutable, unpaid|not_required)
+    //   - status: string (required, requested|accepted|declined)
+    //   - created_at: timestamp (required, immutable)
+    //
+    // Collection: stores/{storeId}/reservation_requests
+    // Document ID: {bookingId}
+    // Fields:
+    //   - Same mirrored schema as accounts/{uid}/bookings/{bookingId}
+    //
+    // Collection: wallets
+    // Document ID: {uid}
+    // Fields:
+    //   - balance: number (server-managed, owner-only read)
+    //
+    // Collection: wallets/{uid}/transactions
+    // Document ID: {transactionId}
+    // Fields:
+    //   - server-managed transaction fields (owner-only read)
+    //
+    // Collection: booking_groups (one immutable proposal per get-together)
+    // Fields: owner_id: uid, title: string(1-100), store_id: uid(1-128),
+    // member_ids: unique list<string>(2-20), target_cents: int(2-10000000),
+    // cancellation_cap_cents: int(0-smallest share), withdrawal_deadline: future
+    // epoch milliseconds, policy_version: 1, created_at: immutable timestamp.
+    // agreements/{uid}: status approved|declined|withdrawal_requested,
+    // share_cents: exact equal share (owner covers rounding), policy_version: 1,
+    // created_at: immutable timestamp, updated_at: server timestamp.
+    // group_wallets/{groupId} and transactions: server-only writes; group members read.
+    // No client can debit, credit, settle, refund or levy a withdrawal charge.
+    //
+    // Collection: groups
+    // Document ID: {groupId}
+    // Fields:
+    //   - server-managed community group fields (read-only for confirmed users)
+    //
+    // Collection: meetup_plans
+    // Document ID: {planId}
+    // Fields:
+    //   - server-managed meetup plan fields (read-only for confirmed users)
+    //
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
     }
+
+    function isConfirmed() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
+    function member() {
+      return isConfirmed() &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.profile_complete == true;
+    }
+
+    function hasAccountType(type) {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/account_roles/$(request.auth.uid)).data.account_type == type;
+    }
+
+    function isValidAccountRole(data) {
+      return data.keys().hasAll(['account_type']) &&
+        data.keys().hasOnly(['account_type']) &&
+        data.account_type in ['customer', 'provider'];
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && ('uid' in resource.data) && resource.data.uid == request.auth.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function isHttpsUrl(value) {
+      return value is string &&
+        value.size() <= 2048 &&
+        value.matches('^https://.*');
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        dateStr.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$');
+    }
+
+    function isScopedPath(path) {
+      return path is string && path.matches('^users/' + request.auth.uid + '/.*');
+    }
+
+    function isPositive(field) {
+      return request.resource.data[field] is number && request.resource.data[field] > 0;
+    }
+
+    function isValidList(list, maxSize) {
+      return list is list && list.size() <= maxSize;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    function isValidMap(mapData, allowedKeys) {
+      return mapData is map && mapData.keys().hasOnly(allowedKeys);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isRecent(time) {
+      return time is timestamp &&
+        time > request.time - duration.value(5, 'm') &&
+        time <= request.time;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidProfile(data) {
+      return data.keys().hasAll(['first_name', 'last_name', 'city', 'province', 'bio', 'interests', 'profile_photo_url', 'profile_complete', 'created_at']) &&
+        data.keys().hasOnly(['first_name', 'last_name', 'city', 'province', 'bio', 'interests', 'profile_photo_url', 'profile_complete', 'created_at']) &&
+        data.first_name is string && data.first_name.size() >= 1 && data.first_name.size() <= 60 &&
+        data.last_name is string && data.last_name.size() >= 1 && data.last_name.size() <= 60 &&
+        data.city is string && data.city.size() >= 1 && data.city.size() <= 80 &&
+        data.province is string && data.province.size() >= 1 && data.province.size() <= 80 &&
+        data.bio is string && data.bio.size() <= 500 &&
+        data.interests is list && data.interests.size() <= 10 &&
+        data.interests.hasOnly(['Coffee', 'Food', 'Walking', 'Fitness', 'Art', 'Music', 'Travel', 'Technology', 'Books', 'Photography']) &&
+        (data.profile_photo_url == null || isHttpsUrl(data.profile_photo_url)) &&
+        data.profile_complete is bool &&
+        data.profile_complete == (
+          data.first_name.size() > 0 &&
+          data.last_name.size() > 0 &&
+          data.city.size() > 0 &&
+          data.province.size() > 0
+        ) &&
+        data.created_at is timestamp;
+    }
+
+    function isValidAccountDetails(data) {
+      return data.keys().hasAll(['phone', 'terms_accepted', 'privacy_accepted', 'safety_guidelines_accepted']) &&
+        data.keys().hasOnly(['phone', 'terms_accepted', 'privacy_accepted', 'safety_guidelines_accepted']) &&
+        data.phone is string && data.phone.matches('^\\+27[6-8][0-9]{8}$') &&
+        data.phone.size() <= 20 &&
+        data.terms_accepted == true &&
+        data.privacy_accepted == true &&
+        data.safety_guidelines_accepted == true;
+    }
+
+    function isValidStore(data) {
+      return data.keys().hasAll(['owner_id', 'name', 'category', 'address', 'city', 'location', 'phone', 'image', 'description', 'deposit_cents', 'max_party_size', 'created_at']) &&
+        data.keys().hasOnly(['owner_id', 'name', 'category', 'address', 'city', 'location', 'phone', 'image', 'description', 'deposit_cents', 'max_party_size', 'created_at']) &&
+        data.owner_id is string && data.owner_id == request.auth.uid &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
+        data.category in ['Restaurant', 'Café', 'Venue'] &&
+        data.address is string && data.address.size() >= 1 && data.address.size() <= 300 &&
+        data.city is string && data.city.size() >= 1 && data.city.size() <= 100 &&
+        data.location is string && data.location == data.city &&
+        data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 30 &&
+        (data.image == null || isHttpsUrl(data.image)) &&
+        data.description is string && data.description.size() <= 2000 &&
+        data.deposit_cents is int && data.deposit_cents >= 0 && data.deposit_cents <= 1000000 &&
+        data.max_party_size is int && data.max_party_size >= 1 && data.max_party_size <= 50 &&
+        data.created_at is timestamp;
+    }
+
+    function isValidBookingData(data) {
+      return data.keys().hasAll(['user_id', 'store_id', 'booking_owner_id', 'title', 'location', 'booking_date', 'guests', 'deposit_cents', 'payment_status', 'status', 'created_at']) &&
+        data.keys().hasOnly(['user_id', 'store_id', 'booking_owner_id', 'title', 'location', 'booking_date', 'guests', 'deposit_cents', 'payment_status', 'status', 'created_at']) &&
+        data.user_id is string && data.user_id.size() >= 1 && data.user_id.size() <= 128 &&
+        data.store_id is string && data.store_id.size() >= 1 && data.store_id.size() <= 128 &&
+        data.booking_owner_id is string && data.booking_owner_id.size() >= 1 && data.booking_owner_id.size() <= 128 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+        data.location is string && data.location.size() >= 1 && data.location.size() <= 100 &&
+        data.booking_date is int && data.booking_date > 0 &&
+        data.guests is int && data.guests >= 1 && data.guests <= 50 &&
+        data.deposit_cents is int && data.deposit_cents >= 0 && data.deposit_cents <= 1000000 &&
+        data.payment_status in ['unpaid', 'not_required'] &&
+        data.status in ['requested', 'accepted', 'declined'] &&
+        data.created_at is timestamp;
+    }
+
+    function isValidBookingCreate(uid, storeId) {
+      let store = get(/databases/$(database)/documents/stores/$(storeId)).data;
+      return member() && hasAccountType('customer') &&
+        isOwner(uid) &&
+        exists(/databases/$(database)/documents/stores/$(storeId)) &&
+        isValidBookingData(request.resource.data) &&
+        request.resource.data.user_id == uid &&
+        request.resource.data.store_id == storeId &&
+        request.resource.data.booking_date > request.time.toMillis() &&
+        request.resource.data.status == 'requested' &&
+        request.resource.data.created_at == request.time &&
+        request.resource.data.booking_owner_id == store.owner_id &&
+        request.resource.data.title == store.name &&
+        request.resource.data.location == store.location &&
+        request.resource.data.guests <= store.max_party_size &&
+        request.resource.data.deposit_cents == store.deposit_cents &&
+        (
+          (store.deposit_cents > 0 && request.resource.data.payment_status == 'unpaid') ||
+          (store.deposit_cents == 0 && request.resource.data.payment_status == 'not_required')
+        );
+    }
+
+    function isValidBookingDecision(storeId) {
+      let store = get(/databases/$(database)/documents/stores/$(storeId)).data;
+      return member() && hasAccountType('provider') &&
+        exists(/databases/$(database)/documents/stores/$(storeId)) &&
+        isValidBookingData(request.resource.data) &&
+        resource.data.status == 'requested' &&
+        request.resource.data.status in ['accepted', 'declined'] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+        request.resource.data.user_id == resource.data.user_id &&
+        request.resource.data.store_id == resource.data.store_id &&
+        request.resource.data.booking_owner_id == resource.data.booking_owner_id &&
+        request.resource.data.title == resource.data.title &&
+        request.resource.data.location == resource.data.location &&
+        request.resource.data.booking_date == resource.data.booking_date &&
+        request.resource.data.guests == resource.data.guests &&
+        request.resource.data.deposit_cents == resource.data.deposit_cents &&
+        request.resource.data.payment_status == resource.data.payment_status &&
+        request.resource.data.created_at == resource.data.created_at &&
+        isOwner(store.owner_id) &&
+        store.owner_id == resource.data.booking_owner_id;
+    }
+
+    function groupMember(groupId) {
+      return member() && request.auth.uid in
+        get(/databases/$(database)/documents/booking_groups/$(groupId)).data.member_ids;
+    }
+
+    function validGroupMemberId(ids, index) {
+      return ids.size() <= index ||
+        (ids[index] is string && ids[index].size() >= 1 && ids[index].size() <= 128 &&
+          ids[index].matches('^[A-Za-z0-9_-]+$'));
+    }
+
+    function isValidBookingGroup(data) {
+      return data.keys().hasAll(['owner_id', 'title', 'store_id', 'member_ids', 'target_cents', 'cancellation_cap_cents', 'withdrawal_deadline', 'policy_version', 'created_at']) &&
+        data.keys().hasOnly(['owner_id', 'title', 'store_id', 'member_ids', 'target_cents', 'cancellation_cap_cents', 'withdrawal_deadline', 'policy_version', 'created_at']) &&
+        data.owner_id == request.auth.uid &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+        data.store_id is string && data.store_id.size() >= 1 && data.store_id.size() <= 128 &&
+        data.store_id.matches('^[A-Za-z0-9_-]+$') &&
+        exists(/databases/$(database)/documents/stores/$(data.store_id)) &&
+        data.member_ids is list && data.member_ids.size() >= 2 && data.member_ids.size() <= 20 &&
+        data.member_ids.toSet().size() == data.member_ids.size() && data.owner_id in data.member_ids &&
+        validGroupMemberId(data.member_ids, 0) &&
+        validGroupMemberId(data.member_ids, 1) &&
+        validGroupMemberId(data.member_ids, 2) &&
+        validGroupMemberId(data.member_ids, 3) &&
+        validGroupMemberId(data.member_ids, 4) &&
+        validGroupMemberId(data.member_ids, 5) &&
+        validGroupMemberId(data.member_ids, 6) &&
+        validGroupMemberId(data.member_ids, 7) &&
+        validGroupMemberId(data.member_ids, 8) &&
+        validGroupMemberId(data.member_ids, 9) &&
+        validGroupMemberId(data.member_ids, 10) &&
+        validGroupMemberId(data.member_ids, 11) &&
+        validGroupMemberId(data.member_ids, 12) &&
+        validGroupMemberId(data.member_ids, 13) &&
+        validGroupMemberId(data.member_ids, 14) &&
+        validGroupMemberId(data.member_ids, 15) &&
+        validGroupMemberId(data.member_ids, 16) &&
+        validGroupMemberId(data.member_ids, 17) &&
+        validGroupMemberId(data.member_ids, 18) &&
+        validGroupMemberId(data.member_ids, 19) &&
+        data.target_cents is int && data.target_cents >= data.member_ids.size() && data.target_cents <= 10000000 &&
+        data.cancellation_cap_cents is int && data.cancellation_cap_cents >= 0 &&
+        data.cancellation_cap_cents <= int(data.target_cents / data.member_ids.size()) &&
+        data.withdrawal_deadline is int && data.withdrawal_deadline > request.time.toMillis() &&
+        data.policy_version == 1 && data.created_at == request.time;
+    }
+
+    function isValidGroupAgreement(groupId, uid, data) {
+      let group = get(/databases/$(database)/documents/booking_groups/$(groupId)).data;
+      let base = int(group.target_cents / group.member_ids.size());
+      let share = base + (uid == group.owner_id ? group.target_cents % group.member_ids.size() : 0);
+      return data.keys().hasAll(['status', 'share_cents', 'policy_version', 'created_at', 'updated_at']) &&
+        data.keys().hasOnly(['status', 'share_cents', 'policy_version', 'created_at', 'updated_at']) &&
+        data.status in ['approved', 'declined', 'withdrawal_requested'] &&
+        data.share_cents is int && data.share_cents == share &&
+        data.policy_version == group.policy_version &&
+        data.created_at is timestamp && data.updated_at == request.time;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
     match /profiles/{uid} {
-      allow get: if isOwner(uid) || (member() && resource.data.profile_complete == true);
-      allow list: if member() && resource.data.profile_complete == true && request.query.limit <= 101;
-      allow create: if isOwner(uid) && isValidProfile(request.resource.data) && request.resource.data.created_at == request.time;
-      allow update: if isOwner(uid) && isValidProfile(request.resource.data) && request.resource.data.created_at == resource.data.created_at;
+      allow get: if isOwner(uid) || (isConfirmed() && resource.data.profile_complete == true);
+      allow list: if isConfirmed() &&
+        request.query.limit != null &&
+        request.query.limit <= 101 &&
+        resource.data.profile_complete == true;
+      allow create: if isOwner(uid) && isValidProfile(request.resource.data) && request.resource.data.created_at == request.time &&
+        isValidAccountRole(getAfter(/databases/$(database)/documents/account_roles/$(uid)).data);
+      allow update: if isOwner(uid) &&
+        isValidProfile(request.resource.data) &&
+        request.resource.data.created_at == resource.data.created_at;
     }
-    function isValidDetails(p) {
-      return p.keys().hasAll(['phone','terms_accepted','privacy_accepted','safety_guidelines_accepted'])
-        && p.keys().hasOnly(['phone','terms_accepted','privacy_accepted','safety_guidelines_accepted'])
-        && text(p.phone, 20) && p.phone.matches('[+]27[6-8][0-9]{8}')
-        && p.terms_accepted == true && p.privacy_accepted == true && p.safety_guidelines_accepted == true;
+
+    match /account_roles/{uid} {
+      allow get: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidAccountRole(request.resource.data);
+      // No client update or delete: an account registers as exactly one type.
     }
+
     match /account_details/{uid} {
       allow get: if isOwner(uid);
-      allow create: if isOwner(uid) && isValidDetails(request.resource.data);
+      allow create: if isOwner(uid) && isValidAccountDetails(request.resource.data);
+      allow update: if isOwner(uid) && isValidAccountDetails(request.resource.data);
     }
-    function isValidStore(s) {
-      return s.keys().hasAll(['owner_id','name','category','address','city','location','phone','image','description','deposit_cents','max_party_size','created_at'])
-        && s.keys().hasOnly(['owner_id','name','category','address','city','location','phone','image','description','deposit_cents','max_party_size','created_at'])
-        && text(s.owner_id, 128) && text(s.name, 150) && s.name.size() > 0
-        && s.category in ['Restaurant','Café','Venue'] && text(s.address, 300) && s.address.size() > 0
-        && text(s.city, 100) && s.city.size() > 0 && s.location == s.city
-        && text(s.phone, 30) && s.phone.size() > 0 && photo(s.image) && text(s.description, 2000)
-        && s.deposit_cents is int && s.deposit_cents >= 0 && s.deposit_cents <= 1000000
-        && s.max_party_size is int && s.max_party_size >= 1 && s.max_party_size <= 50 && s.created_at is timestamp;
+
+    match /stores/{storeId} {
+      allow get: if isConfirmed();
+      allow list: if isConfirmed() &&
+        request.query.limit != null &&
+        request.query.limit <= 100;
+      allow create: if member() && hasAccountType('provider') && isValidStore(request.resource.data) && request.resource.data.created_at == request.time;
+      allow update: if member() && hasAccountType('provider') &&
+        isValidStore(request.resource.data) &&
+        request.resource.data.owner_id == resource.data.owner_id &&
+        request.resource.data.created_at == resource.data.created_at;
     }
-    match /stores/{store} {
-      allow read: if member();
-      allow create: if member() && isOwner(request.resource.data.owner_id) && isValidStore(request.resource.data) && request.resource.data.created_at == request.time;
-      allow update: if member() && isOwner(resource.data.owner_id) && request.resource.data.owner_id == resource.data.owner_id
-        && isValidStore(request.resource.data) && request.resource.data.created_at == resource.data.created_at;
+
+    match /accounts/{uid}/bookings/{bookingId} {
+      allow get: if isConfirmed() && (isOwner(uid) || isOwner(resource.data.booking_owner_id));
+      allow list: if isConfirmed() &&
+        isOwner(uid) &&
+        request.query.limit != null &&
+        request.query.limit <= 100;
+      allow create: if isValidBookingCreate(uid, request.resource.data.store_id) &&
+        getAfter(/databases/$(database)/documents/stores/$(request.resource.data.store_id)/reservation_requests/$(bookingId)).data == request.resource.data;
+      allow update: if isValidBookingDecision(resource.data.store_id) &&
+        getAfter(/databases/$(database)/documents/stores/$(resource.data.store_id)/reservation_requests/$(bookingId)).data == request.resource.data;
     }
-    function isValidBooking(b) {
-      return b.keys().hasAll(['user_id','store_id','booking_owner_id','title','location','booking_date','guests','deposit_cents','payment_status','status','created_at'])
-        && b.keys().hasOnly(['user_id','store_id','booking_owner_id','title','location','booking_date','guests','deposit_cents','payment_status','status','created_at'])
-        && text(b.user_id,128) && text(b.store_id,128) && b.store_id.matches('[A-Za-z0-9_-]{1,128}') && text(b.booking_owner_id,128)
-        && text(b.title,150) && text(b.location,100) && b.booking_date is int && b.booking_date > 0
-        && b.guests is int && b.guests >= 1 && b.guests <= 50 && b.deposit_cents is int && b.deposit_cents >= 0 && b.deposit_cents <= 1000000
-        && b.payment_status in ['unpaid','not_required'] && b.status in ['requested','accepted','declined'] && b.created_at is timestamp;
+
+    match /stores/{storeId}/reservation_requests/{bookingId} {
+      allow get: if isConfirmed() && isOwner(get(/databases/$(database)/documents/stores/$(storeId)).data.owner_id);
+      allow list: if isConfirmed() &&
+        isOwner(get(/databases/$(database)/documents/stores/$(storeId)).data.owner_id) &&
+        request.query.limit != null &&
+        request.query.limit <= 100;
+      allow create: if isValidBookingCreate(request.resource.data.user_id, storeId) &&
+        getAfter(/databases/$(database)/documents/accounts/$(request.resource.data.user_id)/bookings/$(bookingId)).data == request.resource.data;
+      allow update: if isValidBookingDecision(storeId) &&
+        getAfter(/databases/$(database)/documents/accounts/$(resource.data.user_id)/bookings/$(bookingId)).data == request.resource.data;
     }
-    function validNewBooking(uid, store, id) {
-      let b = request.resource.data;
-      let s = get(/databases/$(database)/documents/stores/$(store)).data;
-      return member() && isOwner(uid) && isValidBooking(b) && b.user_id == uid && b.store_id == store
-        && b.booking_owner_id == s.owner_id && b.title == s.name && b.location == s.location
-        && b.guests <= s.max_party_size && b.deposit_cents == s.deposit_cents
-        && b.booking_date > request.time.toMillis() && b.created_at == request.time && b.status == 'requested'
-        && b.payment_status == (s.deposit_cents > 0 ? 'unpaid' : 'not_required')
-        && getAfter(/databases/$(database)/documents/accounts/$(uid)/bookings/$(id)).data == b
-        && getAfter(/databases/$(database)/documents/stores/$(store)/reservation_requests/$(id)).data == b;
-    }
-    function validAnswer(uid, store, id) {
-      let b = request.resource.data;
-      return member() && isOwner(resource.data.booking_owner_id)
-        && isOwner(get(/databases/$(database)/documents/stores/$(store)).data.owner_id)
-        && isValidBooking(b) && resource.data.status == 'requested' && b.status in ['accepted','declined']
-        && b.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && getAfter(/databases/$(database)/documents/accounts/$(uid)/bookings/$(id)).data == b
-        && getAfter(/databases/$(database)/documents/stores/$(store)/reservation_requests/$(id)).data == b;
-    }
-    match /accounts/{uid}/bookings/{id} {
-      allow read: if confirmed() && (isOwner(uid) || isOwner(resource.data.booking_owner_id));
-      allow create: if validNewBooking(uid, request.resource.data.store_id, id);
-      allow update: if validAnswer(uid, resource.data.store_id, id);
-    }
-    match /stores/{store}/reservation_requests/{id} {
-      allow read: if member() && isOwner(get(/databases/$(database)/documents/stores/$(store)).data.owner_id);
-      allow create: if validNewBooking(request.resource.data.user_id, store, id);
-      allow update: if validAnswer(resource.data.user_id, store, id);
-    }
+
     match /wallets/{uid} {
-      allow get: if confirmed() && isOwner(uid);
-      match /transactions/{id} { allow read: if confirmed() && isOwner(uid); }
+      allow get: if isConfirmed() && isOwner(uid);
+      allow list: if false;
+
+      match /transactions/{transactionId} {
+        allow get: if isConfirmed() && isOwner(uid);
+        allow list: if isConfirmed() &&
+          isOwner(uid) &&
+          request.query.limit != null &&
+          request.query.limit <= 20;
+      }
     }
-    match /groups/{id} { allow read: if member(); }
-    match /meetup_plans/{id} { allow read: if member(); }
-    match /{document=**} { allow read, write: if false; }
+
+    match /booking_groups/{groupId} {
+      allow get: if member() && request.auth.uid in resource.data.member_ids;
+      allow list: if member() && request.auth.uid in resource.data.member_ids &&
+        request.query.limit != null && request.query.limit <= 100;
+      allow create: if member() && hasAccountType('customer') && isValidBookingGroup(request.resource.data);
+      // Terms, members and budget are immutable. New terms require a new proposal.
+      match /agreements/{uid} {
+        allow get: if groupMember(groupId);
+        allow list: if groupMember(groupId) && request.query.limit != null && request.query.limit <= 20;
+        allow create: if groupMember(groupId) && isOwner(uid) &&
+          isValidGroupAgreement(groupId, uid, request.resource.data) &&
+          request.resource.data.status in ['approved', 'declined'] &&
+          (request.resource.data.status == 'declined' || exists(/databases/$(database)/documents/stores/$(get(/databases/$(database)/documents/booking_groups/$(groupId)).data.store_id))) &&
+          request.resource.data.created_at == request.time &&
+          request.time.toMillis() <= get(/databases/$(database)/documents/booking_groups/$(groupId)).data.withdrawal_deadline;
+        allow update: if groupMember(groupId) && isOwner(uid) &&
+          isValidGroupAgreement(groupId, uid, request.resource.data) &&
+          resource.data.status == 'approved' && request.resource.data.status == 'withdrawal_requested' &&
+          request.resource.data.created_at == resource.data.created_at &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updated_at']);
+      }
+    }
+
+    match /group_wallets/{groupId} {
+      allow get: if groupMember(groupId);
+      match /transactions/{transactionId} {
+        allow get: if groupMember(groupId);
+        allow list: if groupMember(groupId) && request.query.limit != null && request.query.limit <= 100;
+      }
+    }
+
+    match /groups/{groupId} {
+      allow get: if isConfirmed();
+      allow list: if isConfirmed() &&
+        request.query.limit != null &&
+        request.query.limit <= 100;
+    }
+
+    match /meetup_plans/{planId} {
+      allow get: if isConfirmed();
+      allow list: if isConfirmed() &&
+        request.query.limit != null &&
+        request.query.limit <= 100;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

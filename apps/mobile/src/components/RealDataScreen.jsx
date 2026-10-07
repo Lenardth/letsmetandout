@@ -1,12 +1,14 @@
+import { displayPhotoUrl } from '../utils/profilePhoto';
 import { StatusBar } from "expo-status-bar";
 import { Image, Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { RefreshCw } from "lucide-react-native";
+import { Heart, RefreshCw } from "lucide-react-native";
 
 import { useTheme } from "../utils/theme";
 import { useApiResource } from "../utils/useApiResource";
 import { EmptyState, ErrorState, LoadingState } from "./DataState";
+import { useFavorites } from "../utils/favorites";
 
 function valueToText(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -32,16 +34,21 @@ export default function RealDataScreen({
   titleFields = ["name", "title", "description", "id"],
   detailFields = [],
   transform = (data) => data,
+  filterFields = ["category", "status", "activity"],
 }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { data, loading, error, refetch } = useApiResource(endpoint, { initialData: [] });
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
+  const { toggle, isSaved } = useFavorites();
   const transformed = transform(data);
-  const items = (Array.isArray(transformed) ? transformed : []).filter((item) =>
+  const rawItems = Array.isArray(transformed) ? transformed : [];
+  const filters = ["All", ...new Set(rawItems.flatMap((item) => filterFields.map((field) => item[field]).filter((value) => typeof value === "string" && value.trim())))].slice(0, 7);
+  const items = rawItems.filter((item) =>
     [getTitle(item, titleFields), item.location, item.bio, item.activity, ...(item.interests || [])]
       .filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase())
-  );
+  ).filter((item) => filter === "All" || filterFields.some((field) => item[field] === filter));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -70,10 +77,9 @@ export default function RealDataScreen({
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 21,
-                backgroundColor: colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
+                borderRadius: 15,
+                backgroundColor: colors.surfaceElevated,
+                borderWidth: 0,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -89,8 +95,9 @@ export default function RealDataScreen({
           placeholder={`Search ${title.toLowerCase()} or city`}
           placeholderTextColor={colors.textTertiary}
           accessibilityLabel={`Search ${title}`}
-          style={{ padding: 14, backgroundColor: colors.surface, color: colors.text, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
+          style={{ paddingHorizontal: 16, paddingVertical: 15, backgroundColor: colors.surface, color: colors.text, borderRadius: 15, borderWidth: 1, borderColor: colors.border, fontSize: 15 }}
         />
+        {filters.length > 1 && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}><TouchableOpacity onPress={() => setFilter("All")} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: filter === "All" ? colors.primary : colors.surface }}><Text style={{ color: filter === "All" ? "#FFFFFF" : colors.textSecondary, fontWeight: "600" }}>All</Text></TouchableOpacity>{filters.slice(1).map((option) => <TouchableOpacity key={option} onPress={() => setFilter(option)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: filter === option ? colors.primary : colors.surface }}><Text style={{ color: filter === option ? "#FFFFFF" : colors.textSecondary, fontWeight: "600" }}>{option}</Text></TouchableOpacity>)}</ScrollView>}
         {loading && <LoadingState />}
         {!loading && error && <ErrorState message={error} onRetry={refetch} />}
         {!loading && !error && items.length === 0 && (
@@ -104,16 +111,21 @@ export default function RealDataScreen({
               key={item.id ?? index}
               style={{
                 backgroundColor: colors.surface,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
+                borderRadius: 20,
+                borderWidth: 0,
                 padding: 16,
-                gap: 10,
+                gap: 12,
+                shadowColor: colors.shadow,
+                shadowOpacity: colors.shadowOpacity,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 2,
               }}
             >
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={isSaved(item.id ?? getTitle(item, titleFields)) ? "Remove from saved" : "Save item"} onPress={() => toggle(item.id ?? getTitle(item, titleFields), item)} style={{ position: "absolute", right: 16, top: 16, zIndex: 1, width: 36, height: 36, borderRadius: 12, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }}><Heart size={17} color={colors.primary} fill={isSaved(item.id ?? getTitle(item, titleFields)) ? colors.primary : "transparent"} /></TouchableOpacity>
               {item.image && (
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: displayPhotoUrl(item.image) }}
                   accessibilityLabel={item.imageDescription || getTitle(item, titleFields)}
                   resizeMode="cover"
                   style={{ width: "100%", height: 190, borderRadius: 10, backgroundColor: colors.border }}
@@ -125,7 +137,7 @@ export default function RealDataScreen({
               {item.imageCredit && <Text style={{ color: colors.textTertiary, fontSize: 11 }}>{item.imageCredit}</Text>}
               {item.interests && (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  {item.interests.map((interest) => <Text key={interest} style={{ color: colors.primary, backgroundColor: colors.surfaceElevated, padding: 8, borderRadius: 12 }}>{interest}</Text>)}
+                  {item.interests.map((interest) => <Text key={interest} style={{ color: colors.primary, backgroundColor: `${colors.primary}14`, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10 }}>{interest}</Text>)}
                 </View>
               )}
               {detailFields

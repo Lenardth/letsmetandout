@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User-selected profile images only. New photos use unique filenames.
+    // SDK reads require confirmed membership; download links are shareable.
+    function confirmed() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function owner(uid) {
+      return confirmed() && request.auth.uid == uid;
+    }
+    match /profile-photos/{uid}/{filename} {
+      allow read: if confirmed();
+      allow create, update: if owner(uid) &&
+        filename.matches('^[A-Za-z0-9_-]{1,128}\\.(jpg|png)$') &&
+        request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024 &&
+        request.resource.contentType in ['image/jpeg', 'image/png'];
+      allow delete: if owner(uid);
+    }
+  }
+}

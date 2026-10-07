@@ -52,3 +52,11 @@ backend/**/*.pyc
 firebase-debug*.log
 firestore-debug*.log
 ui-debug*.log
+
+# Local demo emulator accounts and exported data
+.firebase-demo/
+
+# Legacy backend secrets and alternate Python environments
+backend/.env*
+!backend/.env.example
+backend/venv/

@@ -12,3 +12,7 @@ test('reservation validates SA local dates, party size and never claims payment'
  assert.throws(() => reservationPayload(store, { date: '2026-02-30', time: '18:00', guests: '2' }, 'customer', 0));
  assert.throws(() => reservationPayload(store, { date: '2026-10-20', time: '18:00', guests: '9' }, 'customer', 0));
 });
+
+test('listing validates decimal precision and Firestore field limits before writing', () => {
+  for (const patch of [{ deposit_rands: '1.001' }, { deposit_rands: '1e2' }, { name: 'x'.repeat(151) }, { city: 'x'.repeat(101) }, { description: 'x'.repeat(2001) }, { image: 'http://example.com/photo' }]) assert.throws(() => listingPayload({ ...listing, ...patch }, 'merchant'));
+});

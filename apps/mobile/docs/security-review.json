@@ -1,0 +1,40 @@
+{
+  "score": 2,
+  "summary": "Local owner/member access controls passed adversarial emulator checks. The intended real-money group wallet is not implemented, so the complete product cannot yet be assessed as ready for financial use. No production rules were published.",
+  "findings": [
+    {
+      "check": "Business Logic vs. Rules",
+      "severity": "major",
+      "issue": "The app records group consent but has no trusted contribution, settlement, penalty or refund workflow.",
+      "recommendation": "Keep money movement disabled until a payment provider is selected and server workflows verify unanimous consent, actual costs, idempotency and reconciliation."
+    },
+    {
+      "check": "Business Logic vs. Rules",
+      "severity": "minor",
+      "issue": "Invitations use supplied member IDs; customer lookup and replacement/cancellation flows are not implemented.",
+      "recommendation": "Add verified invitation acceptance and reviewed membership transitions before treating proposals as funded bookings."
+    }
+  ],
+  "verified_controls": [
+    "Account type is owner-readable and immutable after registration.",
+    "Customers cannot create provider listings; providers cannot create customer booking requests.",
+    "Mirrored bookings require consistent ownership, authoritative deposits and unpaid state.",
+    "Group terms are immutable; approvals are member-owned and shares are validated.",
+    "Withdrawal requests remove individual approval; another member cannot approve or withdraw on their behalf.",
+    "Wallet balances and transactions reject all mobile-client writes.",
+    "Missing group parents and outsider reads are denied.",
+    "Missing listings cannot receive new group approvals.",
+    "Profile photo writes/deletes are verified-owner-only, with file type/size enforcement on creation and replacement."
+  ],
+  "verification": {
+    "unit_and_adapter_tests": 32,
+    "emulator_scenarios": 11,
+    "emulator_reported_tests_including_parent": 12,
+    "typescript": "passed",
+    "expo_web_export": "passed",
+    "native_device_testing": "not performed",
+    "production_payment_testing": "not available",
+    "expo_doctor": "21/21 passed on 8 October 2026",
+    "release_configuration": "passed; emulator-enabled configuration rejected"
+  }
+}

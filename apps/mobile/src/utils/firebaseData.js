@@ -17,20 +17,31 @@ function rows(snapshot) {
 }
 export async function getOwnProfile(user) {
   const { db } = getFirebase();
-  const [snapshot, details] = await Promise.all([getDoc(doc(db, `profiles/${user.uid}`)), getDoc(doc(db, `account_details/${user.uid}`))]);
-  if (!snapshot.exists()) return null;
-  return { ...snapshot.data(), interests: snapshot.data().interests || [], id: user.uid, phone: details.data()?.phone, email: user.email, email_verified: user.emailVerified, verification_level: user.emailVerified ? 'Email confirmed' : 'Unverified', status: 'Active account' };
+  const [snapshot, details, role] = await Promise.all([getDoc(doc(db, `profiles/${user.uid}`)), getDoc(doc(db, `account_details/${user.uid}`)), getDoc(doc(db, `account_roles/${user.uid}`))]);
+  if (!snapshot.exists()) return role.exists() ? { account_type: role.data().account_type, id: user.uid } : null;
+  return { ...snapshot.data(), interests: snapshot.data().interests || [], id: user.uid, account_type: role.data()?.account_type || null, phone: details.data()?.phone, email: user.email, email_verified: user.emailVerified, verification_level: user.emailVerified ? 'Email confirmed' : 'Unverified', status: 'Active account' };
 }
 function editableProfile(values) {
   return Object.fromEntries(Object.entries(values).filter(([key]) => ['first_name', 'last_name', 'city', 'province', 'bio', 'interests', 'profile_photo_url'].includes(key)));
 }
 export async function createAccountProfile(user, values) {
+  if (!['customer', 'provider'].includes(values.account_type)) throw new Error('Choose Customer or Service provider.');
   const { db } = getFirebase();
   const profile = { first_name: '', last_name: '', city: '', province: '', bio: '', interests: [], profile_photo_url: null, ...editableProfile(values) };
   const batch = writeBatch(db);
   batch.set(doc(db, `profiles/${user.uid}`), { ...profile, profile_complete: hasCompleteProfile(profile), created_at: serverTimestamp() });
   batch.set(doc(db, `account_details/${user.uid}`), { phone: values.phone || '', terms_accepted: !!values.terms_accepted, privacy_accepted: !!values.privacy_accepted, safety_guidelines_accepted: !!values.safety_guidelines_accepted });
+  batch.set(doc(db, `account_roles/${user.uid}`), { account_type: values.account_type });
   await batch.commit();
+}
+export async function registerAccountType(accountType) {
+  if (!['customer', 'provider'].includes(accountType)) throw new Error('Choose Customer or Service provider.');
+  const { db, user } = currentUser();
+  const reference = doc(db, `account_roles/${user.uid}`);
+  const existing = await getDoc(reference);
+  if (existing.exists()) throw new Error('Your account type is already registered.');
+  await setDoc(reference, { account_type: accountType });
+  return getOwnProfile(user);
 }
 export async function updateOwnProfile(values) {
   const { db, user } = currentUser();
@@ -55,7 +66,15 @@ export async function loadFirebaseResource(path, params = {}) {
       getDocs(query(collection(db, `wallets/${user.uid}/transactions`), orderBy('created_at', 'desc'), limit(20))),
       getDoc(doc(db, `wallets/${user.uid}`)),
     ]);
-    return { balance: Number(wallet.data()?.balance || 0), transactions: rows(transactions) };
+    if (!wallet.exists()) {
+      if (transactions.docs.length) throw new Error('Wallet records are incomplete. Contact SafeMeet support.');
+      return { balance: null, transactions: [], available: false };
+    }
+    const balance = wallet.data().balance;
+    if (typeof balance !== 'number' || !Number.isFinite(balance) || balance < 0 || !Number.isSafeInteger(Math.round(balance * 100)) || Math.abs(balance * 100 - Math.round(balance * 100)) > 0.000001) throw new Error('Your wallet balance could not be verified. Contact SafeMeet support.');
+    const records = rows(transactions);
+    if (records.some((record) => typeof record.amount !== 'number' || !Number.isFinite(record.amount) || !Number.isSafeInteger(Math.round(record.amount * 100)) || Math.abs(record.amount * 100 - Math.round(record.amount * 100)) > 0.000001)) throw new Error('Wallet transactions could not be verified. Contact SafeMeet support.');
+    return { balance, transactions: records, available: true };
   }
   const name = collections[path];
   if (!name) throw new Error('This resource is not configured in Firebase.');

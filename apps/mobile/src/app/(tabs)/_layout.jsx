@@ -1,11 +1,17 @@
-import { Tabs } from "expo-router";
-import { Calendar, Search, User, UserPlus, Users, Wallet, Store, CalendarCheck } from "lucide-react-native";
+import { Redirect, Tabs } from "expo-router";
+import { Calendar, Home, Search, User, Users, Wallet, Store, CalendarCheck } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../utils/theme";
+
+import { useExperience } from "../../utils/experience";
 
 export default function TabLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+
+  const { mode, ready } = useExperience();
+  if (!ready) return null;
+  if (!mode) return <Redirect href="/choose-experience" />;
 
   return (
     <Tabs
@@ -13,19 +19,24 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 64 + insets.bottom,
+          borderTopColor: "transparent",
+          borderTopWidth: 0,
+          height: 72 + insets.bottom,
           paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 8,
-          paddingHorizontal: 8,
+          paddingTop: 10,
+          paddingHorizontal: 12,
+          shadowColor: colors.shadow,
+          shadowOpacity: colors.shadowOpacity,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: -5 },
+          elevation: 12,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: "Inter_600SemiBold",
-          marginTop: 2,
+          marginTop: 4,
         },
         tabBarItemStyle: {
           paddingVertical: 4,
@@ -33,6 +44,14 @@ export default function TabLayout() {
         },
       }}
     >
+      <Tabs.Protected guard={mode === "customer"}>
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => <Home color={color} size={23} strokeWidth={focused ? 2.2 : 1.6} />,
+        }}
+      />
       <Tabs.Screen
         name="discover"
         options={{
@@ -89,6 +108,10 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Store size={22} color={color} />,
         }}
       />
+      </Tabs.Protected>
+      <Tabs.Protected guard={mode === "provider"}>
+        <Tabs.Screen name="provider" options={{ title: "My business", tabBarIcon: ({ color }) => <Store size={22} color={color} /> }} />
+      </Tabs.Protected>
       <Tabs.Screen
         name="wallet"
         options={{

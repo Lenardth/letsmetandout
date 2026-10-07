@@ -3,15 +3,15 @@ import { useColorScheme } from 'react-native';
 // Modern color palette with improved accessibility and visual hierarchy
 const lightTheme = {
   // Core surfaces
-  background: '#F8F9FA',  // Soft off-white
-  surface: '#FFFFFF',     // Pure white cards/sheets
-  surfaceElevated: '#FFFFFF', // With elevation shadow instead of color
+  background: '#F7F7FB',
+  surface: '#FFFFFF',
+  surfaceElevated: '#FCFCFF',
   surfaceCard: '#FFFFFF',
   
   // Text hierarchy
-  text: '#1A1A1A',       // High-contrast charcoal
-  textSecondary: '#5A5A5A', // Medium contrast
-  textTertiary: '#9A9A9A',  // Low emphasis
+  text: '#171822',
+  textSecondary: '#687080',
+  textTertiary: '#98A0AF',
   
   // Brand colors (vibrant but accessible)
   primary: '#FF3A79',     // Modern pink-red
@@ -26,23 +26,25 @@ const lightTheme = {
   info: '#2979FF',        // Bright info blue
   
   // Borders & dividers
-  border: '#E8E8E8',      // Very subtle borders
-  divider: '#F0F0F0',     // Section dividers
+  border: '#E7E8EF',
+  divider: '#EFF0F5',
   
   // Status bar
   statusBar: 'dark',
   
   // New modern additions
-  backdrop: 'rgba(0,0,0,0.15)', // For overlays
-  shadow: '#000000',       // Base shadow color
-  icon: '#5A5A5A'         // Standard icon color
+  backdrop: 'rgba(15, 18, 35, 0.18)',
+  shadow: '#171822',
+  icon: '#687080',
+  radius: 20,
+  shadowOpacity: 0.08,
 };
 
 const darkTheme = {
   // Deep surfaces (true black is harsh for dark mode)
-  background: '#121212',   // Near-black
-  surface: '#1E1E1E',      // Material dark surface
-  surfaceElevated: '#252525', // Elevated cards
+  background: '#101116',
+  surface: '#191A21',
+  surfaceElevated: '#22232C',
   surfaceCard: '#1E1E1E',
   
   // Text (with opacity hierarchy)
@@ -72,7 +74,9 @@ const darkTheme = {
   // New modern additions
   backdrop: 'rgba(0,0,0,0.5)', // Darker overlays
   shadow: '#000000',       // Stronger shadows
-  icon: 'rgba(255,255,255,0.7)' // Icon color
+  icon: 'rgba(255,255,255,0.7)',
+  radius: 20,
+  shadowOpacity: 0.24,
 };
 
 export function useTheme() {
@@ -87,7 +91,8 @@ export function useTheme() {
       sm: 8,
       md: 16,
       lg: 24,
-      xl: 32
+      xl: 32,
+      xxl: 40,
     }
   };
 }

@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { RefreshCw, Wallet } from "lucide-react-native";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -11,10 +12,10 @@ export default function WalletScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { data, loading, error, refetch } = useApiResource("/wallet/summary", {
-    initialData: { balance: 0, transactions: [] },
+    initialData: null,
   });
   const transactions = Array.isArray(data?.transactions) ? data.transactions : [];
-  const balance = Number(data?.balance || 0);
+  const balance = data?.balance;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -30,7 +31,7 @@ export default function WalletScreen() {
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 28 }}>Wallet</Text>
+            <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 30, letterSpacing: -0.7 }}>Wallet</Text>
             <Text style={{ color: colors.textSecondary, fontFamily: "Inter_400Regular", fontSize: 15 }}>
               Your balance and recent activity
             </Text>
@@ -52,31 +53,23 @@ export default function WalletScreen() {
           </TouchableOpacity>
         </View>
 
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: colors.border,
-            padding: 20,
-            gap: 12,
-          }}
-        >
-          <Wallet size={24} color={colors.primary} />
-          <Text style={{ color: colors.textSecondary, fontFamily: "Inter_600SemiBold", fontSize: 12 }}>
+        <LinearGradient colors={[colors.primary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 22, padding: 22, gap: 12, shadowColor: colors.primary, shadowOpacity: 0.25, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 4 }}>
+        <Wallet size={24} color="#FFFFFF" />
+        <Text style={{ color: "rgba(255,255,255,0.78)", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>
             CURRENT BALANCE
           </Text>
-          <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 36 }}>
-            R{balance.toFixed(2)}
+          <Text style={{ color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 36 }}>
+            {loading ? 'Loading…' : error ? 'Unavailable' : data?.available ? `R${balance.toFixed(2)}` : 'Not active'}
           </Text>
-        </View>
+        </LinearGradient>
 
+        <Text style={{ color: colors.textSecondary }}>Wallet top-ups, group contributions, payments and refunds are not active yet.</Text>
         {loading && <LoadingState />}
         {!loading && error && <ErrorState message={error} onRetry={refetch} />}
         {!loading && !error && transactions.length === 0 && (
           <EmptyState
             title="No wallet transactions yet"
-            message="Your transactions will appear here when you use your wallet."
+            message="Confirmed transactions will appear here once payments are available."
           />
         )}
 
@@ -87,11 +80,15 @@ export default function WalletScreen() {
               key={transaction.id ?? index}
               style={{
                 backgroundColor: colors.surface,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
+                borderRadius: 20,
+                borderWidth: 0,
                 padding: 16,
-                gap: 6,
+                gap: 8,
+                shadowColor: colors.shadow,
+                shadowOpacity: colors.shadowOpacity,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 2,
               }}
             >
               <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 17 }}>
