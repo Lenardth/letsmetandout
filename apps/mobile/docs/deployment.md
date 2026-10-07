@@ -32,3 +32,7 @@ No cloud build has been queued by this preparation. No production user/data migr
 Submit only after these gates: `npx eas-cli submit --platform ios --profile production --latest` (or `--platform android`). Submission configuration still requires store account details. For updates, use the matching production environment/channel and verify runtime compatibility; do not publish demo settings.
 
 References: [EAS build profiles](https://docs.expo.dev/build/eas-json/), [build ignore files](https://docs.expo.dev/build-reference/easignore/).
+
+## Preparation checks completed
+
+On 8 October 2026: Expo Doctor 21/21 passed; 32 unit/adapter tests passed; 11 emulator scenarios passed (12 reported tests including the parent); TypeScript passed; release configuration checks passed and rejected demo mode. Production web, Android and iOS exports completed in ignored `dist/`. These exports validate bundling, not signed native binaries or physical-device operation.

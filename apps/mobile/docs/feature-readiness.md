@@ -41,3 +41,5 @@ Three photo validation/URL tests, four demo configuration tests, and the Storage
 ## Deployment preparation
 
 Production app identifiers, URL scheme, EAS environment/channel configuration, credential exclusions and a build configuration guard are prepared. See [deployment steps and outstanding release gates](deployment.md). This is preparation for a non-payment beta, not a completed store release.
+
+Production exports for web, Android and iOS completed successfully on 8 October 2026. Signed native builds, live Firebase provisioning and store submission have not been performed.
